@@ -1,0 +1,52 @@
+#!/usr/bin/env node
+'use strict'
+// vim: set ft=javascript:ts=2:sw=2
+const program = require('commander')
+const pkg = require('../package.json')
+const createPackageJson = require('../')
+const arrayFromList = require('../lib/array-from-list')
+
+let directory
+
+program
+  .version(pkg.version)
+  .arguments('<directory>')
+  .action((dir) => directory = dir)
+  .option('--ignore-existing', 'Ignore existing package.json')
+  .option('--no-prompt', 'Skip prompts and just use input options')
+  .option('--spacer [json spacer]', 'Format character for package json', 2)
+  .option('--name [name]', 'The package name')
+  .option('--scope [scope]', 'The package scope')
+  .option('--ver [version]', 'The package version')
+  .option('--description [description]', 'The package description')
+  .option('--author [author]', 'The package author')
+  .option('--repository [repository]', 'The package repository')
+  .option('--keywords [keywords]', 'The package keywords')
+  .option('--license [license]', 'The package license')
+  .option('--main [main]', 'The package main entry point')
+  .option('--private', 'This is a private package')
+  .option('--dependencies [dependencies]', 'Package dependencies')
+  .option('--dev-dependencies [dependencies]', 'Package dev dependencies')
+  .option('--scripts [scripts]', 'Package scripts')
+  .parse(process.argv)
+
+// Run the process
+createPackageJson({
+  directory: directory,
+  ignoreExisting: program.ignoreExisting,
+  noPrompt: program.noPrompt,
+  spacer: program.spacer,
+  // check if string because there is a .name getter function, same with description
+  name: typeof program.name === 'string' ? program.name : undefined,
+  scope: program.scope,
+  version: program.ver,
+  description: typeof program.description === 'string' ? program.description : undefined,
+  author: program.author,
+  repository: program.repository,
+  keywords: program.keywords,
+  license: program.license,
+  main: program.main,
+  private: program.private,
+  dependencies: arrayFromList(program.dependencies),
+  devDependencies: arrayFromList(program.devDependencies)
+})

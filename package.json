@@ -1,0 +1,37 @@
+{
+  "name": "create-package-json",
+  "version": "0.0.1",
+  "description": "Create a package.json",
+  "main": "index.js",
+  "bin": {
+    "create-package-json": "./bin/create-package-json"
+  },
+  "scripts": {
+    "test": "standard && mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wesleytodd/create-package-json"
+  },
+  "keywords": [
+    "scaffold",
+    "generator",
+    "package.json",
+    "packagejson",
+    "create"
+  ],
+  "author": "Wes Todd <wes@wesleytodd.com>",
+  "license": "ICS",
+  "dependencies": {
+    "commander": "^2.15.1",
+    "defined": "^1.0.0",
+    "fs-extra": "^6.0.0",
+    "inquirer": "^5.2.0",
+    "shelljs": "^0.8.2",
+    "validate-npm-package-name": "^3.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^5.1.1",
+    "standard": "^11.0.1"
+  }
+}
