@@ -22,16 +22,7 @@ const arrayOrUndefined = require('./lib/array-or-undefined')
 // cpu
 // publishConfig
 
-module.exports = async function createPackageJson (options = {}) {
-  // Construct all the options from the input
-  const opts = await buildOptions(options)
-
-  // Merge it back together and write it out
-  return write((opts.noPrompt === true) ? opts : await prompt(opts, options), format(opts, pkg))
-}
-
-module.exports.buildOptions = buildOptions
-async function buildOptions (input = {}) {
+module.exports = async function createPackageJson (input = {}) {
   // Removed undefined values from input
   const options = Object.keys(input).reduce((o, key) => {
     if (typeof input[key] !== 'undefined') {
@@ -41,7 +32,7 @@ async function buildOptions (input = {}) {
   }, {})
 
   // Option defaults
-  const opts = Object.assign({
+  let opts = Object.assign({
     spacer: 2,
     directory: process.cwd(),
     ignoreExisting: false,
@@ -60,6 +51,7 @@ async function buildOptions (input = {}) {
     }
   }
 
+  // Construct all the options from the input
   // Set things from opts, package.json or defaults
   opts.version = opts.version || pkg.version || '1.0.0'
   opts.description = opts.description || pkg.description || ''
@@ -80,7 +72,8 @@ async function buildOptions (input = {}) {
   opts.name = name
   opts.scope = scope
 
-  return opts
+  // Merge it back together and write it out
+  return write((opts.noPrompt === true) ? opts : await prompt(opts, options), format(opts, pkg))
 }
 
 module.exports.format = format

@@ -7,7 +7,9 @@
     "create-package-json": "./bin/create-package-json"
   },
   "scripts": {
-    "test": "standard && mocha"
+    "test": "standard && mocha",
+    "prepublishOnly": "npm t",
+    "postpublish": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
