@@ -30,6 +30,11 @@ program
   .option('--scripts [scripts]', 'Package scripts')
   .parse(process.argv)
 
+// Process scripts as json
+if (program.scripts) {
+  program.scripts = JSON.parse(program.scripts)
+}
+
 // Run the process
 createPackageJson({
   directory: directory,
@@ -47,6 +52,7 @@ createPackageJson({
   license: program.license,
   main: program.main,
   private: program.private,
+  scripts: program.scripts,
   dependencies: arrayFromList(program.dependencies),
   devDependencies: arrayFromList(program.devDependencies)
 })
