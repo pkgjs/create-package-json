@@ -6,6 +6,10 @@ const shell = require('shelljs')
 const defined = require('defined')
 const prompt = require('./lib/prompts')
 const arrayOrUndefined = require('./lib/array-or-undefined')
+const getAuthor = require('./lib/get-author')
+const mapDepToVersionString = require('./lib/map-dep-to-version-string')
+const scopeAndName = require('./lib/scope-and-name')
+const gitRemote = require('./lib/git-remote')
 
 // @TODO https://docs.npmjs.com/files/package.json
 // man
@@ -72,8 +76,8 @@ async function buildPackageOptions (options = {}, pkg = {}) {
   // Set things from opts, package.json or defaults
   opts.version = options.version || pkg.version || '1.0.0'
   opts.description = options.description || pkg.description || ''
-  opts.author = options.author || pkg.author || await getAuthor()
-  opts.repository = options.repository || (pkg.repository && pkg.repository.url) || await readGitRemote(options.directory)
+  opts.author = options.author || pkg.author || getAuthor()
+  opts.repository = options.repository || (pkg.repository && pkg.repository.url) || await gitRemote(options.directory)
   opts.keywords = arrayOrUndefined(options.keywords) || pkg.keywords || []
   opts.license = options.license || pkg.license || 'ISC'
   opts.main = options.main || pkg.main || 'index.js'
@@ -85,7 +89,7 @@ async function buildPackageOptions (options = {}, pkg = {}) {
   opts.scripts = Object.assign({}, options.scripts || {}, pkg.scripts || {})
 
   // Get name and scope, if not from options from cwd
-  const {name, scope} = getScopeAndName(options.scope, options.name || pkg.name, options.directory)
+  const {name, scope} = scopeAndName(options.scope, options.name || pkg.name, options.directory)
   opts.name = name
   opts.scope = scope
 
@@ -137,74 +141,4 @@ async function write (opts, pkg) {
 
   // Read full package back to return
   return fs.readJSON(opts.pkgPath)
-}
-
-//
-// Helper Functions
-//
-
-function readGitRemote (dir) {
-  // Taken from npm: https://github.com/npm/init-package-json/blob/latest/default-input.js#L188-L208
-  return new Promise((resolve) => {
-    fs.readFile(path.join(dir, '.git', 'config'), 'utf8', function (err, conf) {
-      if (err || !conf) {
-        return resolve()
-      }
-      conf = conf.split(/\r?\n/)
-      const i = conf.indexOf('[remote "origin"]')
-      let u
-      if (i !== -1) {
-        // Check if one of the next two lines is the remote url
-        u = conf[i + 1]
-        if (!u.match(/^\s*url =/)) {
-          u = conf[i + 2]
-        }
-        if (!u.match(/^\s*url =/)) {
-          u = null
-        } else {
-          u = u.replace(/^\s*url = /, '')
-        }
-      }
-
-      // Replace github url
-      if (u && u.match(/^git@github.com:/)) {
-        u = u.replace(/^git@github.com:/, 'https://github.com/')
-      }
-
-      resolve(u)
-    })
-  })
-}
-
-function getAuthor () {
-  const name = shell.exec('git config --get user.name', { silent: true }).stdout.trim()
-  const email = shell.exec('git config --get user.email', { silent: true }).stdout.trim()
-  if (!name) {
-    return
-  }
-  return `${name} <${email}>`
-}
-
-function getScopeAndName (scope, name, cwd) {
-  // If no package name, get cwd base name
-  if (!name) {
-    name = path.basename(cwd)
-  }
-
-  // If no scope, see if name has a scope in it
-  if (!scope && name && name.startsWith('@')) {
-    [scope, name] = name.split('/')
-  }
-
-  // If still no scope, see if one directory up starts with an @
-  const dirname = path.basename(path.dirname(cwd))
-  if (dirname.startsWith('@')) {
-    scope = dirname
-  }
-
-  return { name, scope }
-}
-
-function mapDepToVersionString (deps) {
-  return Array.isArray(deps) ? deps : Object.keys(deps).map((name) => `${name}@${deps[name]}`)
 }
