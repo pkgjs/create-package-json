@@ -23,57 +23,73 @@ const arrayOrUndefined = require('./lib/array-or-undefined')
 // publishConfig
 
 module.exports = async function createPackageJson (input = {}) {
-  // Removed undefined values from input
+  // We need this for the defaults
+  const cwd = process.cwd()
+
+  // Removed undefined values from input and default some options
   const options = Object.keys(input).reduce((o, key) => {
     if (typeof input[key] !== 'undefined') {
       o[key] = input[key]
     }
     return o
-  }, {})
-
-  // Option defaults
-  let opts = Object.assign({
+  }, {
     spacer: 2,
-    directory: process.cwd(),
+    directory: cwd,
+    pkgPath: path.join(input.directory || cwd, 'package.json'),
     ignoreExisting: false,
     noPrompt: false,
     silent: false
-  }, options)
+  })
 
   // Read existing package.json
-  opts.pkgPath = path.join(opts.directory, 'package.json')
+  const pkg = await readPackageJson(options)
+
+  // Build up the package field options and merge it all together
+  const opts = await buildPackageOptions(options, pkg)
+
+  // Format the json and write it out
+  return write(await prompt(opts, options), format(opts, pkg))
+}
+
+module.exports.readPackageJson = readPackageJson
+async function readPackageJson (opts = {}) {
   let pkg = {}
-  if (opts.ignoreExisting === true) {
+  if (opts.ignoreExisting !== true) {
     try {
       pkg = await fs.readJSON(opts.pkgPath)
     } catch (e) {
       // ignore if missing or unreadable
     }
   }
+  return pkg
+}
+
+module.exports.buildPackageOptions = buildPackageOptions
+async function buildPackageOptions (options = {}, pkg = {}) {
+  const opts = {}
 
   // Construct all the options from the input
   // Set things from opts, package.json or defaults
-  opts.version = opts.version || pkg.version || '1.0.0'
-  opts.description = opts.description || pkg.description || ''
-  opts.author = opts.author || pkg.author || await getAuthor()
-  opts.repository = opts.repository || (pkg.repository && pkg.repository.url) || await readGitRemote(opts.directory)
-  opts.keywords = arrayOrUndefined(opts.keywords) || pkg.keywords || []
-  opts.license = opts.license || pkg.license || 'ISC'
-  opts.main = opts.main || pkg.main || 'index.js'
-  opts.private = defined(opts.private, pkg.private)
-  opts.dependencies = mapDepToVersionString(arrayOrUndefined(opts.dependencies) || pkg.dependencies || [])
-  opts.devDependencies = mapDepToVersionString(arrayOrUndefined(opts.devDependencies) || pkg.devDependencies || [])
+  opts.version = options.version || pkg.version || '1.0.0'
+  opts.description = options.description || pkg.description || ''
+  opts.author = options.author || pkg.author || await getAuthor()
+  opts.repository = options.repository || (pkg.repository && pkg.repository.url) || await readGitRemote(options.directory)
+  opts.keywords = arrayOrUndefined(options.keywords) || pkg.keywords || []
+  opts.license = options.license || pkg.license || 'ISC'
+  opts.main = options.main || pkg.main || 'index.js'
+  opts.private = defined(options.private, pkg.private)
+  opts.dependencies = mapDepToVersionString(arrayOrUndefined(options.dependencies) || pkg.dependencies || [])
+  opts.devDependencies = mapDepToVersionString(arrayOrUndefined(options.devDependencies) || pkg.devDependencies || [])
 
   // Merge together scripts from opts and package.json
-  opts.scripts = Object.assign({}, opts.scripts || {}, pkg.scripts || {})
+  opts.scripts = Object.assign({}, options.scripts || {}, pkg.scripts || {})
 
   // Get name and scope, if not from options from cwd
-  const {name, scope} = getScopeAndName(opts.scope, opts.name || pkg.name, opts.directory)
+  const {name, scope} = getScopeAndName(options.scope, options.name || pkg.name, options.directory)
   opts.name = name
   opts.scope = scope
 
-  // Merge it back together and write it out
-  return write((opts.noPrompt === true) ? opts : await prompt(opts, options), format(opts, pkg))
+  return Object.assign({}, options, opts)
 }
 
 module.exports.format = format
