@@ -29,6 +29,7 @@
     "defined": "^1.0.0",
     "fs-extra": "^6.0.0",
     "inquirer": "^5.2.0",
+    "realize-package-specifier": "^3.0.3",
     "shelljs": "^0.8.2",
     "validate-npm-package-name": "^3.0.0"
   },

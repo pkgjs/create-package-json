@@ -13,7 +13,10 @@ program
   .arguments('<directory>')
   .action((dir) => directory = dir)
   .option('--ignore-existing', 'Ignore existing package.json')
+  .option('--existing-package [path]', 'Provide a path to an existing package.json to start with')
+  .option('--update-deps', 'Update deps which to their latest versions')
   .option('--no-prompt', 'Skip prompts and just use input options')
+  .option('--extended', 'Show extended option prompts (ex. browser, engines, etc)')
   .option('--spacer [json spacer]', 'Format character for package json', 2)
   .option('--name [name]', 'The package name')
   .option('--scope [scope]', 'The package scope')
@@ -27,6 +30,7 @@ program
   .option('--private', 'This is a private package')
   .option('--dependencies [dependencies]', 'Package dependencies')
   .option('--dev-dependencies [dependencies]', 'Package dev dependencies')
+  // .option('--peer-dependencies [dependencies]', 'Package peer dependencies')
   .option('--scripts [scripts]', 'Package scripts')
   .parse(process.argv)
 
@@ -34,12 +38,23 @@ program
 if (program.scripts) {
   program.scripts = JSON.parse(program.scripts)
 }
+if (program.dependencies) {
+  program.dependencies = arrayFromList(program.dependencies)
+}
+if (program.devDependencies) {
+  program.devDependencies = arrayFromList(program.devDependencies)
+}
+// if (program.peerDependencies) {
+//   program.peerDependencies = arrayFromList(program.peerDependencies)
+// }
 
 // Run the process
 createPackageJson({
   directory: directory,
   ignoreExisting: program.ignoreExisting,
+  existingPackage: program.existingPackage,
   noPrompt: program.noPrompt,
+  extended: program.extended,
   spacer: program.spacer,
   // check if string because there is a .name getter function, same with description
   name: typeof program.name === 'string' ? program.name : undefined,
@@ -53,6 +68,8 @@ createPackageJson({
   main: program.main,
   private: program.private,
   scripts: program.scripts,
-  dependencies: arrayFromList(program.dependencies),
-  devDependencies: arrayFromList(program.devDependencies)
+  dependencies: program.dependencies,
+  devDependencies: program.devDependencies,
+  updateDeps: program.updateDeps
+  // peerDependencies: program.peerDependencies
 })

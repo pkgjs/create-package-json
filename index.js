@@ -12,7 +12,6 @@ const scopeAndName = require('./lib/scope-and-name')
 const gitRemote = require('./lib/git-remote')
 
 // @TODO https://docs.npmjs.com/files/package.json
-// man
 // bin
 // files
 // browser
@@ -40,19 +39,26 @@ module.exports = async function createPackageJson (input = {}) {
     spacer: 2,
     directory: cwd,
     pkgPath: path.join(input.directory || cwd, 'package.json'),
+    updateDeps: true,
     ignoreExisting: false,
     noPrompt: false,
-    silent: false
+    silent: false,
+    extended: false
   })
 
   // Read existing package.json
   const pkg = await readPackageJson(options)
 
   // Build up the package field options and merge it all together
-  const opts = await buildPackageOptions(options, pkg)
+  let opts = await buildPackageOptions(options, pkg)
+
+  opts = await prompt(opts, options)
+
+  // Merge peer deps into dev deps
+  // opts.devDependencies = opts.devDependencies.concat(opts.peerDependencies || [])
 
   // Format the json and write it out
-  return write(await prompt(opts, options), format(opts, pkg))
+  return write(opts, format(opts, pkg))
 }
 
 module.exports.readPackageJson = readPackageJson
@@ -60,7 +66,7 @@ async function readPackageJson (opts = {}) {
   let pkg = {}
   if (opts.ignoreExisting !== true) {
     try {
-      pkg = await fs.readJSON(opts.pkgPath)
+      pkg = await fs.readJSON(opts.existingPackage || opts.pkgPath)
     } catch (e) {
       // ignore if missing or unreadable
     }
@@ -82,8 +88,12 @@ async function buildPackageOptions (options = {}, pkg = {}) {
   opts.license = options.license || pkg.license || 'ISC'
   opts.main = options.main || pkg.main || 'index.js'
   opts.private = defined(options.private, pkg.private)
-  opts.dependencies = mapDepToVersionString(arrayOrUndefined(options.dependencies) || pkg.dependencies || [])
-  opts.devDependencies = mapDepToVersionString(arrayOrUndefined(options.devDependencies) || pkg.devDependencies || [])
+  opts.dependencies = mapDepToVersionString(arrayOrUndefined(options.dependencies) || pkg.dependencies || [], !opts.updateDeps)
+  opts.devDependencies = mapDepToVersionString(arrayOrUndefined(options.devDependencies) || pkg.devDependencies || [], !opts.updateDeps)
+  // opts.peerDependencies = mapDepToVersionString(arrayOrUndefined(options.peerDependencies) || pkg.peerDependencies || [])
+
+  // Extended options
+  opts.man = options.man || pkg.man
 
   // Merge together scripts from opts and package.json
   opts.scripts = Object.assign({}, options.scripts || {}, pkg.scripts || {})
@@ -115,6 +125,13 @@ function format (opts, pkg = {}) {
   if (opts.private === true) {
     pkg.private = true
   }
+  if (opts.man && opts.man.length) {
+    pkg.man = Array.isArray(opts.man) && !opts.man[1] ? opts.man[0] : opts.man
+  }
+  // @TODO ensure they are formatted correctly?
+  // if (opts.peerDependencies) {
+  //   pkg.peerDependencies = opts.peerDependencies
+  // }
   return pkg
 }
 
