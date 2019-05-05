@@ -142,15 +142,28 @@ async function write (opts, pkg) {
     spaces: opts.spacer || 2
   })
 
+  // Remove npm env vars from the commands, this
+  // is so it respects the directory it is run in,
+  // otherwise this overrides things in .npmrc
+  const env = Object.keys(shell.env).reduce((e, key) => {
+    if (key.startsWith('npm_')) {
+      return e
+    }
+    e[key] = shell.env[key]
+    return e
+  }, {})
+
   // Run installs
   if (opts.dependencies && opts.dependencies.length) {
     await shell.exec(`npm i --save ${opts.dependencies.join(' ')}`, {
+      env: env,
       cwd: opts.directory,
       silent: opts.silent
     })
   }
   if (opts.devDependencies && opts.devDependencies.length) {
     await shell.exec(`npm i --save-dev ${opts.devDependencies.join(' ')}`, {
+      env: env,
       cwd: opts.directory,
       silent: opts.silent
     })
