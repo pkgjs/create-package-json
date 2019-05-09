@@ -58,4 +58,17 @@ describe('create package json', () => {
     assert(pkg.devDependencies.standard)
     assert(pkg.devDependencies.mocha)
   })
+
+  it('should handle false for no scope', async function () {
+    const pkg = await createPackageJson({
+      directory: TMP_DIR,
+      noPrompt: true,
+      silent: true,
+
+      name: 'test-package',
+      scope: false
+    })
+
+    assert.equal(pkg.name, 'test-package')
+  })
 })
