@@ -96,7 +96,7 @@ async function buildPackageOptions (options = {}, pkg = {}) {
   opts.man = options.man || pkg.man
 
   // Merge together scripts from opts and package.json
-  opts.scripts = Object.assign({}, options.scripts || {}, pkg.scripts || {})
+  opts.scripts = Object.assign({}, pkg.scripts || {}, options.scripts || {})
 
   // Get name and scope, if not from options from cwd
   const {name, scope} = scopeAndName(options.scope, options.name || pkg.name, options.directory)
