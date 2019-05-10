@@ -99,7 +99,7 @@ async function buildPackageOptions (options = {}, pkg = {}) {
   opts.scripts = Object.assign({}, pkg.scripts || {}, options.scripts || {})
 
   // Get name and scope, if not from options from cwd
-  const {name, scope} = scopeAndName(options.scope, options.name || pkg.name, options.directory)
+  const { name, scope } = scopeAndName(options.scope, options.name || pkg.name, options.directory)
   opts.name = name
   opts.scope = scope
 

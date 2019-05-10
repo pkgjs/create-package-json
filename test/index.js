@@ -2,7 +2,7 @@
 // vim: set ft=javascript ts=2 sw=2:
 const path = require('path')
 const assert = require('assert')
-const {describe, it, beforeEach} = require('mocha')
+const { describe, it, beforeEach } = require('mocha')
 const fs = require('fs-extra')
 const createPackageJson = require('../')
 
@@ -18,10 +18,10 @@ describe('create package json', () => {
       silent: true
     })
 
-    assert.equal(pkg.name, path.basename(TMP_DIR))
-    assert.equal(pkg.version, '1.0.0')
+    assert.strictEqual(pkg.name, path.basename(TMP_DIR))
+    assert.strictEqual(pkg.version, '1.0.0')
     assert(pkg.author)
-    assert.equal(pkg.license, 'ISC')
+    assert.strictEqual(pkg.license, 'ISC')
   })
 
   it('should create a full package.json', async function () {
@@ -45,15 +45,15 @@ describe('create package json', () => {
       devDependencies: ['standard', 'mocha']
     })
 
-    assert.equal(pkg.name, 'test-package')
-    assert.equal(pkg.version, '0.0.1')
-    assert.equal(pkg.description, 'a test package')
-    assert.equal(pkg.main, './lib/index.js')
-    assert.equal(pkg.author, 'Test User <test@example.com>')
-    assert.equal(pkg.repository.url, 'https://github.com/foo/bar.git')
+    assert.strictEqual(pkg.name, 'test-package')
+    assert.strictEqual(pkg.version, '0.0.1')
+    assert.strictEqual(pkg.description, 'a test package')
+    assert.strictEqual(pkg.main, './lib/index.js')
+    assert.strictEqual(pkg.author, 'Test User <test@example.com>')
+    assert.strictEqual(pkg.repository.url, 'https://github.com/foo/bar.git')
     assert(pkg.keywords.includes('foo'))
     assert(pkg.keywords.includes('bar'))
-    assert.equal(pkg.license, 'MIT')
+    assert.strictEqual(pkg.license, 'MIT')
     assert(pkg.dependencies.nighthawk)
     assert(pkg.devDependencies.standard)
     assert(pkg.devDependencies.mocha)
@@ -69,6 +69,31 @@ describe('create package json', () => {
       scope: false
     })
 
-    assert.equal(pkg.name, 'test-package')
+    assert.strictEqual(pkg.name, 'test-package')
+  })
+
+  it('should accept script overrides', async function () {
+    await createPackageJson({
+      directory: TMP_DIR,
+      noPrompt: true,
+      silent: true,
+
+      name: 'test-package',
+      scripts: {
+        test: 'exit 1'
+      }
+    })
+    const pkg = await createPackageJson({
+      directory: TMP_DIR,
+      noPrompt: true,
+      silent: true,
+
+      name: 'test-package',
+      scripts: {
+        test: 'mocha'
+      }
+    })
+
+    assert.strictEqual(pkg.scripts.test, 'mocha')
   })
 })
