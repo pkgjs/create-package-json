@@ -1,5 +1,10 @@
 # Create a `package.json` like a champion
 
+[![NPM Version](https://badgen.net/npm/v/create-package-json?icon=npm)](https://npmjs.org/package/create-package-json)
+[![NPM Downloads](https://badgen.net/npm/dm/create-package-json?icon=npm)](https://npmjs.org/package/create-package-json)
+[![JS Standard Style](https://badgen.net/badge/code%20style/standard/blue)](https://github.com/standard/standard)
+[![GitHub Sponsor](https://badgen.net/badge/icon/sponsor/pink?icon=github&label=github)](https://github.com/sponsors/wesleytodd)
+
 This is a fully featured `package.json` scaffolding tool.  It goes above and beyond the basic `npm init`
 by supporting (almost) all of the keys you can set in a `package.json`.  It can be used as a simple cli
 tool, or inside your other package scaffolding tools.
@@ -11,12 +16,10 @@ tool, or inside your other package scaffolding tools.
 
 ```
 $ npm init package-json
-```
+$ npx create-package-json
 
-With `npm@6` this will run this package with `npx`.  If you are on an earlier version of `npm` you will
-need to install globally and run directly:
+# or
 
-```
 $ npm install -g create-package-json
 $ create-package-json
 ```
@@ -26,28 +29,41 @@ $ create-package-json
 ```
 $ create-package-json --help
 
-  Usage: create-package-json [options] <directory>
+create-package-json
 
-  Options:
+Create a package.json
 
-    -V, --version                      output the version number
-    --ignore-existing                  Ignore existing package.json
-    --no-prompt                        Skip prompts and just use input options
-    --spacer [json spacer]             Format character for package json (default: 2)
-    --name [name]                      The package name
-    --scope [scope]                    The package scope
-    --ver [version]                    The package version
-    --description [description]        The package description
-    --author [author]                  The package author
-    --repository [repository]          The package repository
-    --keywords [keywords]              The package keywords
-    --license [license]                The package license
-    --main [main]                      The package main entry point
-    --private                          This is a private package
-    --dependencies [dependencies]      Package dependencies
-    --dev-dependencies [dependencies]  Package dev dependencies
-    --scripts [scripts]                Package scripts
-    -h, --help                         output usage information
+Options:
+  --help               Show help                                       [boolean]
+  --version            Show version number                             [boolean]
+  --no-prompt          Prompts, --no-prompt to use defaults and input only
+                                                                       [boolean]
+  --directory, -d      Working directory                                [string]
+  --silent, -S         Suppress all output                             [boolean]
+  --advanced           Show advanced prompts                           [boolean]
+  --existing-package                                                    [string]
+  --scope                                                               [string]
+  --scripts                                                             [string]
+  --name                                                                [string]
+  --package-version                                                     [string]
+  --description                                                         [string]
+  --author                                                              [string]
+  --repository                                                          [string]
+  --keywords                                                            [string]
+  --license                                                             [string]
+  --type                                                                [string]
+  --main                                                                [string]
+  --private                                                            [boolean]
+  --dependencies                                                        [string]
+  --dev-dependencies                                                    [string]
+  --peer-dependencies                                                   [string]
+  --test                                                                [string]
+  --prepare                                                             [string]
+  --post-publish                                                        [string]
+  --pre-version                                                         [string]
+  --spacer                                                              [string]
+  --ignore-existing                                                    [boolean]
+  --save-exact                                                         [boolean]
 ```
 
 Dependencies should be a comma separated list like `--dependencies="express,react"`, and it can also

@@ -1,174 +1,383 @@
 'use strict'
-// vim: set ft=javascript ts=2 sw=2:
-const path = require('path')
+const create = require('@pkgjs/create')
 const fs = require('fs-extra')
-const shell = require('shelljs')
-const defined = require('defined')
-const prompt = require('./lib/prompts')
-const arrayOrUndefined = require('./lib/array-or-undefined')
-const getAuthor = require('./lib/get-author')
-const mapDepToVersionString = require('./lib/map-dep-to-version-string')
+const path = require('path')
+const parseList = require('safe-parse-list')
 const scopeAndName = require('./lib/scope-and-name')
-const gitRemote = require('./lib/git-remote')
+const npm = require('./lib/npm')
+const git = require('./lib/git')
 
 // @TODO https://docs.npmjs.com/files/package.json
+// exports
 // bin
+// funding
 // files
 // browser
 // directories
 // config
-// peerDependencies
 // bundledDependencies
 // optionalDependencies
 // engines
-// engineStrict
+// os
 // cpu
 // publishConfig
+// homepage
+// bugs
+// contributors
 
-module.exports = async function createPackageJson (input = {}) {
-  // We need this for the defaults
-  const cwd = process.cwd()
+module.exports = create({
+  commandDescription: 'Create a package.json',
+  options: {
+    // No prompts, just flags
+    pkgPath: {
+      type: 'string',
+      flag: {
+        key: 'existing-package'
+      },
+      prompt: false
+    },
+    scope: {
+      type: 'string',
+      prompt: false
+    },
+    scripts: {
+      type: 'string',
+      prompt: false
+    },
 
-  // Removed undefined values from input and default some options
-  const options = Object.keys(input).reduce((o, key) => {
-    if (typeof input[key] !== 'undefined') {
-      o[key] = input[key]
+    name: {
+      type: 'string',
+      prompt: {
+        message: 'Package name:',
+        validate: npm.validatePackageName
+      }
+    },
+    version: {
+      type: 'string',
+      flag: {
+        key: 'package-version'
+      },
+      prompt: {
+        message: 'Version:'
+      }
+    },
+    description: {
+      type: 'string',
+      prompt: {
+        message: 'Description:'
+      }
+    },
+    author: {
+      type: 'string',
+      prompt: {
+        message: 'Author:'
+      }
+    },
+    repository: {
+      type: 'string',
+      prompt: {
+        message: 'Repository:'
+      }
+    },
+    keywords: {
+      type: 'string',
+      prompt: {
+        message: 'Keywords:',
+        filter: parseList
+      }
+    },
+    license: {
+      type: 'string',
+      default: 'ISC',
+      prompt: {
+        message: 'License:'
+      }
+    },
+    type: {
+      type: 'string',
+      prompt: {
+        message: 'Module Type:',
+        type: 'list',
+        choices: ['commonjs', 'module']
+      }
+    },
+    main: {
+      type: 'string',
+      default: 'index.js',
+      prompt: {
+        message: 'Main:'
+      }
+    },
+    private: {
+      advanced: true,
+      type: 'boolean',
+      prompt: {
+        message: 'Private package:',
+        default: false
+      }
+    },
+    dependencies: {
+      type: 'string',
+      prompt: {
+        message: 'Dependencies:',
+        filter: parseList,
+        validate: npm.validatePackageSpec
+      }
+    },
+    devDependencies: {
+      type: 'string',
+      flag: {
+        key: 'dev-dependencies'
+      },
+      prompt: {
+        message: 'Dev Dependencies:',
+        filter: parseList,
+        validate: npm.validatePackageSpec
+      }
+    },
+    peerDependencies: {
+      advanced: true,
+      type: 'string',
+      flag: {
+        key: 'peer-dependencies'
+      },
+      prompt: {
+        message: 'Peer Dependencies:',
+        filter: parseList,
+        validate: npm.validatePackageSpec
+      }
+    },
+
+    // Common npm scripts
+    scriptsTest: {
+      type: 'string',
+      flag: {
+        key: 'test'
+      },
+      prompt: {
+        message: 'Test script:'
+      }
+    },
+    scriptsPrepare: {
+      advanced: true,
+      type: 'string',
+      flag: {
+        key: 'prepare'
+      },
+      prompt: {
+        message: 'Prepare script:'
+      }
+    },
+    scriptsPostPublish: {
+      advanced: true,
+      type: 'string',
+      flag: {
+        key: 'post-publish'
+      },
+      prompt: {
+        message: 'Post publish script:'
+      }
+    },
+    scriptsPreVersion: {
+      advanced: true,
+      type: 'string',
+      flag: {
+        key: 'pre-version'
+      },
+      prompt: {
+        message: 'Pre version script:'
+      }
+    },
+
+    // Meta prompts
+    spacer: {
+      advanced: true,
+      type: 'string',
+      default: '  ',
+      flag: {
+        key: 'spacer'
+      },
+      prompt: {
+        message: 'JSON spacer character:'
+      }
+    },
+    // @TODO should this exist? or should people just do
+    // package@latest in their (dev)dependencies
+    // updateDeps: {
+    //   advanced: true,
+    //   type: 'boolean',
+    //   default: true,
+    //   flag: {
+    //     key: 'update-deps'
+    //   },
+    //   prompt: {
+    //     message: 'Update dependencies:'
+    //   }
+    // },
+    ignoreExisting: {
+      advanced: true,
+      type: 'boolean',
+      default: false,
+      prompt: false,
+      flag: {
+        key: 'ignore-existing'
+      }
+    },
+    saveExact: {
+      advanced: true,
+      type: 'boolean',
+      default: false,
+      flag: {
+        key: 'save-exact'
+      },
+      prompt: {
+        message: 'Save exact versions:'
+      }
     }
-    return o
-  }, {
-    spacer: 2,
-    directory: cwd,
-    pkgPath: path.join(input.directory || cwd, 'package.json'),
-    updateDeps: true,
-    ignoreExisting: false,
-    noPrompt: false,
-    silent: false,
-    extended: false
-  })
+  }
+}, async (initOpts, input) => {
+  const directory = input.directory || process.cwd()
+  const pkgPath = path.resolve(directory, input.pkgPath || 'package.json')
 
   // Read existing package.json
-  const pkg = await readPackageJson(options)
+  const pkg = input.ignoreExisting ? {} : await readPackageJson(pkgPath)
 
-  // Build up the package field options and merge it all together
-  let opts = await buildPackageOptions(options, pkg)
+  // Derive defaults from input and existing package.json
+  const version = input.version || pkg.version || '1.0.0'
+  const name = scopeAndName(input.scope, input.name || pkg.name, directory)
+  const type = input.type || pkg.type || 'commonjs'
+  const author = input.author || pkg.author || await git.author()
+  const description = input.description || pkg.description
+  const repository = input.repository || (pkg.repository && pkg.repository.url) || await git.remote(input)
+  const keywords = parseList(input.keywords || pkg.keywords)
 
-  opts = await prompt(opts, options)
+  // Dependencies
+  const dependencies = parseList(input.dependencies)
+  const devDependencies = parseList(input.devDependencies)
+  const peerDependencies = parseList(input.peerDependencies)
 
-  // Merge peer deps into dev deps
-  // opts.devDependencies = opts.devDependencies.concat(opts.peerDependencies || [])
+  // Derive standard scripts
+  const scriptsTest = input.scriptsTest || (pkg.scripts && pkg.scripts.test) || 'echo "Error: no test specified" && exit 1'
+  const scriptsPrepare = input.scriptsPrepare || (pkg.scripts && pkg.scripts.prepare)
+  const scriptsPreVersion = input.scriptsPreVersion || (pkg.scripts && pkg.scripts.preversion)
+  const scriptsPostPublish = input.scriptsPostPublish || (pkg.scripts && pkg.scripts.postpublish)
+
+  // Process options & prompt for input
+  const opts = await initOpts({
+    directory,
+    version,
+    name,
+    type,
+    description,
+    author,
+    repository,
+    keywords,
+    dependencies,
+    devDependencies,
+    peerDependencies,
+    scriptsTest,
+    scriptsPrepare,
+    scriptsPreVersion,
+    scriptsPostPublish
+  })
 
   // Format the json and write it out
-  return write(opts, format(opts, pkg))
-}
+  return write(pkgPath, opts, await format(opts, pkg))
+})
 
 module.exports.readPackageJson = readPackageJson
-async function readPackageJson (opts = {}) {
+async function readPackageJson (pkgPath, opts = {}) {
   let pkg = {}
-  if (opts.ignoreExisting !== true) {
-    try {
-      pkg = await fs.readJSON(opts.existingPackage || opts.pkgPath)
-    } catch (e) {
-      // ignore if missing or unreadable
-    }
+  try {
+    pkg = await fs.readJSON(pkgPath)
+  } catch (e) {
+    // @TODO log this?
+    // ignore if missing or unreadable
   }
   return pkg
 }
 
-module.exports.buildPackageOptions = buildPackageOptions
-async function buildPackageOptions (options = {}, pkg = {}) {
-  const opts = {}
-
-  // Construct all the options from the input
-  // Set things from opts, package.json or defaults
-  opts.version = options.version || pkg.version || '1.0.0'
-  opts.description = options.description || pkg.description || ''
-  opts.author = options.author || pkg.author || getAuthor()
-  opts.repository = options.repository || (pkg.repository && pkg.repository.url) || await gitRemote(options.directory)
-  opts.keywords = arrayOrUndefined(options.keywords) || pkg.keywords || []
-  opts.license = options.license || pkg.license || 'ISC'
-  opts.main = options.main || pkg.main || 'index.js'
-  opts.private = defined(options.private, pkg.private)
-  opts.dependencies = mapDepToVersionString(arrayOrUndefined(options.dependencies) || pkg.dependencies || [], !opts.updateDeps)
-  opts.devDependencies = mapDepToVersionString(arrayOrUndefined(options.devDependencies) || pkg.devDependencies || [], !opts.updateDeps)
-  // opts.peerDependencies = mapDepToVersionString(arrayOrUndefined(options.peerDependencies) || pkg.peerDependencies || [])
-
-  // Extended options
-  opts.man = options.man || pkg.man
-
-  // Merge together scripts from opts and package.json
-  opts.scripts = Object.assign({}, pkg.scripts || {}, options.scripts || {})
-
-  // Get name and scope, if not from options from cwd
-  const { name, scope } = scopeAndName(options.scope, options.name || pkg.name, options.directory)
-  opts.name = name
-  opts.scope = scope
-
-  return Object.assign({}, options, opts)
-}
-
 module.exports.format = format
-function format (opts, pkg = {}) {
-  pkg.name = opts.scope ? `${opts.scope}/${opts.name}` : opts.name
+async function format (opts, pkg = {}) {
+  // The order here matters
+  pkg.name = opts.name
   pkg.version = opts.version
-  pkg.description = opts.description
-  pkg.author = opts.author
-  pkg.keywords = opts.keywords
-  pkg.license = opts.license
+  pkg.description = opts.description || ''
   pkg.main = opts.main
+  pkg.type = opts.type || 'commonjs'
+
+  if (opts.keywords && opts.keywords.length) {
+    pkg.keywords = opts.keywords
+  }
+
+  // Scripts
+  pkg.scripts = Object.assign({}, {
+    test: opts.scriptsTest,
+    prepare: opts.scriptsPrepare,
+    preversion: opts.scriptsPreVersion,
+    postpublish: opts.scriptsPostPublish
+  }, opts.scripts)
+
+  pkg.author = opts.author || ''
+  pkg.license = opts.license
+
   if (opts.repository) {
     pkg.repository = {
       type: 'git',
       url: opts.repository
     }
   }
-  pkg.scripts = opts.scripts
+
   if (opts.private === true) {
     pkg.private = true
   }
+
   if (opts.man && opts.man.length) {
     pkg.man = Array.isArray(opts.man) && !opts.man[1] ? opts.man[0] : opts.man
   }
-  // @TODO ensure they are formatted correctly?
-  // if (opts.peerDependencies) {
-  //   pkg.peerDependencies = opts.peerDependencies
-  // }
+
+  // Format peer deps
+  if (opts.peerDependencies && opts.peerDependencies.length) {
+    pkg.peerDependencies = {}
+
+    await Promise.all(opts.peerDependencies.map(async (name) => {
+      const spec = await npm.normalizePackageName(name)
+      let ver
+      switch (spec.type) {
+        case 'range':
+        case 'version':
+          ver = spec.fetchSpec
+          break
+        default:
+          ver = '*'
+      }
+      pkg.peerDependencies[spec.name] = ver
+    }))
+  }
   return pkg
 }
 
 module.exports.write = write
-async function write (opts, pkg) {
+async function write (pkgPath, opts, pkg) {
   // Write package json
-  await fs.outputJSON(opts.pkgPath, pkg, {
+  await fs.outputJSON(pkgPath, pkg, {
     spaces: opts.spacer || 2
   })
 
-  // Remove npm env vars from the commands, this
-  // is so it respects the directory it is run in,
-  // otherwise this overrides things in .npmrc
-  const env = Object.keys(shell.env).reduce((e, key) => {
-    if (key.startsWith('npm_')) {
-      return e
-    }
-    e[key] = shell.env[key]
-    return e
-  }, {})
-
   // Run installs
-  if (opts.dependencies && opts.dependencies.length) {
-    await shell.exec(`npm i --save ${opts.dependencies.join(' ')}`, {
-      env: env,
-      cwd: opts.directory,
-      silent: opts.silent
-    })
-  }
-  if (opts.devDependencies && opts.devDependencies.length) {
-    await shell.exec(`npm i --save-dev ${opts.devDependencies.join(' ')}`, {
-      env: env,
-      cwd: opts.directory,
-      silent: opts.silent
-    })
-  }
+  await npm.install(opts.dependencies, {
+    save: 'prod',
+    directory: opts.directory,
+    silent: opts.silent,
+    exact: opts.saveExact
+  })
+  await npm.install(opts.devDependencies, {
+    save: 'dev',
+    directory: opts.directory,
+    silent: opts.silent,
+    exact: opts.saveExact
+  })
 
   // Read full package back to return
-  return fs.readJSON(opts.pkgPath)
+  return fs.readJSON(pkgPath)
 }

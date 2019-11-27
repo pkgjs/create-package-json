@@ -3,11 +3,13 @@
   "version": "0.0.9",
   "description": "Create a package.json",
   "main": "index.js",
+  "type": "commonjs",
   "bin": {
     "create-package-json": "./bin/create-package-json"
   },
   "scripts": {
     "test": "standard && mocha",
+    "debug": "mocha --inspect --inspect-brk",
     "prepublishOnly": "npm t",
     "postpublish": "git push && git push --tags"
   },
@@ -23,14 +25,18 @@
     "create"
   ],
   "author": "Wes Todd <wes@wesleytodd.com>",
+  "funding": {
+    "type": "GitHub Sponsor",
+    "url": "https://github.com/sponsors/wesleytodd"
+  },
   "license": "ICS",
   "dependencies": {
-    "commander": "^2.15.1",
-    "defined": "^1.0.0",
+    "@pkgjs/create": "^0.1.0",
+    "execa": "^3.4.0",
     "fs-extra": "^6.0.1",
     "inquirer": "^5.2.0",
-    "realize-package-specifier": "^3.0.3",
-    "shelljs": "^0.8.2",
+    "npm-package-arg": "^7.0.0",
+    "safe-parse-list": "^0.1.1",
     "validate-npm-package-name": "^3.0.0"
   },
   "devDependencies": {
