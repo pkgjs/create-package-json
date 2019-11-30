@@ -1,6 +1,6 @@
 {
   "name": "create-package-json",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Create a package.json",
   "main": "index.js",
   "type": "commonjs",
