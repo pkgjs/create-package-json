@@ -31,7 +31,7 @@
   },
   "license": "ICS",
   "dependencies": {
-    "@pkgjs/create": "^0.1.0",
+    "@pkgjs/create": "^0.2.0",
     "execa": "^3.4.0",
     "fs-extra": "^6.0.1",
     "inquirer": "^5.2.0",

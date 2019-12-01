@@ -234,55 +234,60 @@ module.exports = create({
         message: 'Save exact versions:'
       }
     }
+  },
+  initOptions: async (input) => {
+    const directory = input.directory || process.cwd()
+    const pkgPath = path.resolve(directory, input.pkgPath || 'package.json')
+
+    // Read existing package.json
+    const pkg = input.ignoreExisting ? {} : await readPackageJson(pkgPath)
+
+    // Derive defaults from input and existing package.json
+    const version = input.version || pkg.version || '1.0.0'
+    const name = scopeAndName(input.scope, input.name || pkg.name, directory)
+    const type = input.type || pkg.type || 'commonjs'
+    const author = input.author || pkg.author || await git.author()
+    const description = input.description || pkg.description
+    const repository = input.repository || (pkg.repository && pkg.repository.url) || await git.remote(input)
+    const keywords = parseList(input.keywords || pkg.keywords)
+
+    // Dependencies
+    const dependencies = parseList(input.dependencies)
+    const devDependencies = parseList(input.devDependencies)
+    const peerDependencies = parseList(input.peerDependencies)
+
+    // Derive standard scripts
+    const scriptsTest = input.scriptsTest || (pkg.scripts && pkg.scripts.test) || 'echo "Error: no test specified" && exit 1'
+    const scriptsPrepare = input.scriptsPrepare || (pkg.scripts && pkg.scripts.prepare)
+    const scriptsPreVersion = input.scriptsPreVersion || (pkg.scripts && pkg.scripts.preversion)
+    const scriptsPostPublish = input.scriptsPostPublish || (pkg.scripts && pkg.scripts.postpublish)
+
+    return {
+      pkg,
+      directory,
+      pkgPath,
+      version,
+      name,
+      type,
+      description,
+      author,
+      repository,
+      keywords,
+      dependencies,
+      devDependencies,
+      peerDependencies,
+      scriptsTest,
+      scriptsPrepare,
+      scriptsPreVersion,
+      scriptsPostPublish
+    }
   }
-}, async (initOpts, input) => {
-  const directory = input.directory || process.cwd()
-  const pkgPath = path.resolve(directory, input.pkgPath || 'package.json')
-
-  // Read existing package.json
-  const pkg = input.ignoreExisting ? {} : await readPackageJson(pkgPath)
-
-  // Derive defaults from input and existing package.json
-  const version = input.version || pkg.version || '1.0.0'
-  const name = scopeAndName(input.scope, input.name || pkg.name, directory)
-  const type = input.type || pkg.type || 'commonjs'
-  const author = input.author || pkg.author || await git.author()
-  const description = input.description || pkg.description
-  const repository = input.repository || (pkg.repository && pkg.repository.url) || await git.remote(input)
-  const keywords = parseList(input.keywords || pkg.keywords)
-
-  // Dependencies
-  const dependencies = parseList(input.dependencies)
-  const devDependencies = parseList(input.devDependencies)
-  const peerDependencies = parseList(input.peerDependencies)
-
-  // Derive standard scripts
-  const scriptsTest = input.scriptsTest || (pkg.scripts && pkg.scripts.test) || 'echo "Error: no test specified" && exit 1'
-  const scriptsPrepare = input.scriptsPrepare || (pkg.scripts && pkg.scripts.prepare)
-  const scriptsPreVersion = input.scriptsPreVersion || (pkg.scripts && pkg.scripts.preversion)
-  const scriptsPostPublish = input.scriptsPostPublish || (pkg.scripts && pkg.scripts.postpublish)
-
+}, async (initOpts) => {
   // Process options & prompt for input
-  const opts = await initOpts({
-    directory,
-    version,
-    name,
-    type,
-    description,
-    author,
-    repository,
-    keywords,
-    dependencies,
-    devDependencies,
-    peerDependencies,
-    scriptsTest,
-    scriptsPrepare,
-    scriptsPreVersion,
-    scriptsPostPublish
-  })
+  const opts = await initOpts()
 
   // Format the json and write it out
-  return write(pkgPath, opts, await format(opts, pkg))
+  return write(opts.pkgPath, opts, await format(opts, opts.pkg))
 })
 
 module.exports.readPackageJson = readPackageJson
