@@ -40,7 +40,7 @@
     "validate-npm-package-name": "^3.0.0"
   },
   "devDependencies": {
-    "mocha": "^5.1.1",
+    "mocha": "^7.1.1",
     "standard": "^14.1.0"
   }
 }
