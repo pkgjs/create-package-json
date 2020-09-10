@@ -7,7 +7,20 @@ const fixtures = require('fs-test-fixtures')
 const createPackageJson = require('../')
 
 const barePrompt = {
-  promptor: () => () => { return {} }
+  promptor: () => async (prompts) => {
+    // Set defaults from prompts
+    const out = await Promise.all(prompts.map(async (p) => {
+      if (!p.when) {
+        return []
+      }
+      let ret = typeof p.default === 'function' ? p.default({}) : p.default
+      if (ret && typeof ret.then === 'function') {
+        ret = await ret
+      }
+      return [p.name, ret]
+    }))
+    return Object.fromEntries(out)
+  }
 }
 
 suite.only('create-git', () => {
@@ -61,15 +74,6 @@ suite.only('create-git', () => {
     assert.strictEqual(pkg.license, 'ISC')
     assert.strictEqual(pkg.type, 'commonjs')
     assert.strictEqual(pkg.main, 'index.js')
-  })
-
-  test('load scope and name from dirs', async () => {
-    await fix.setup('scope')
-    const pkg = await createPackageJson({
-      cwd: path.join(fix.TMP, '@test', 'scoped')
-    }, barePrompt)
-
-    assert.strictEqual(pkg.name, '@test/scoped')
   })
 
   test('load from existing package.json', async () => {

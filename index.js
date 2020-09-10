@@ -3,7 +3,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const opta = require('opta')
 const parseList = require('safe-parse-list')
-const scopeAndName = require('./lib/scope-and-name')
+const packageName = require('./lib/package-name')
 const git = require('./lib/git')
 const npm = require('./lib/npm')
 
@@ -16,7 +16,8 @@ function initOpts () {
         prompt: false,
         flag: {
           alias: 'd',
-          defaultDescription: 'process.cwd()'
+          defaultDescription: 'process.cwd()',
+          default: () => process.cwd()
         }
       },
 
@@ -33,16 +34,23 @@ function initOpts () {
         type: 'string',
         prompt: {
           message: 'Package name:',
-          validate: npm.validatePackageName
+          validate: npm.validatePackageName,
+          default: (promptInput, allInput) => {
+            return packageName(allInput.name, allInput.cwd)
+          }
         }
       },
       version: {
         type: 'string',
         flag: {
-          key: 'package-version'
+          key: 'package-version',
+          alias: 'V'
         },
         prompt: {
-          message: 'Version:'
+          message: 'Initial version:',
+          default: (promptInput, allInput) => {
+            return allInput.version || '1.0.0'
+          }
         }
       },
       description: {
@@ -54,13 +62,19 @@ function initOpts () {
       author: {
         type: 'string',
         prompt: {
-          message: 'Author:'
+          message: 'Author:',
+          default: (promptInput, allInput) => {
+            return allInput.author || git.author({ cwd: allInput.cwd })
+          }
         }
       },
       repository: {
         type: 'string',
         prompt: {
-          message: 'Repository:'
+          message: 'Repository:',
+          default: (promptInput, allInput) => {
+            return allInput.repository || git.remote({ cwd: allInput.cwd })
+          }
         }
       },
       keywords: {
@@ -84,14 +98,19 @@ function initOpts () {
         prompt: {
           message: 'Module Type:',
           type: 'list',
-          choices: ['commonjs', 'module']
+          choices: ['commonjs', 'module'],
+          default: (promptInput, allInput) => {
+            return allInput.type || 'commonjs'
+          }
         }
       },
       main: {
         type: 'string',
-        default: 'index.js',
         prompt: {
-          message: 'Main:'
+          message: 'Main:',
+          default: (promptInput, allInput) => {
+            return allInput.main || 'index.js'
+          }
         }
       },
       private: {
@@ -157,29 +176,14 @@ async function main (input, _opts = {}) {
   let opts = options.values()
 
   // Read current state and set defaults
-  const pkgPath = path.resolve(opts.cwd, 'package.json')
-  const pkg = opts.ignoreExisting ? {} : await readPackageJson(pkgPath)
-
-  // Set defaults
-  options.defaults({
-    version: pkg.version || '1.0.0',
-    name: scopeAndName(input.name || pkg.name, opts.cwd),
-    type: pkg.type || 'commonjs',
-    author: pkg.author || await git.author({ cwd: opts.cwd }),
-    description: pkg.description,
-    repository: async () => {
-      // @TODO Do more here, read from git, etc
-      return (pkg.repository && pkg.repository.url) || git.remote({ cwd: opts.cwd })
-    },
-    keywords: parseList(pkg.keywords)
-  })
+  const pkg = opts.ignoreExisting ? {} : await readPackageJson(options)
 
   await options.prompt({
     promptor: _opts.promptor
   })()
 
   opts = options.values()
-  return write(pkgPath, opts, await format(opts, pkg))
+  return write(path.resolve(opts.cwd, 'package.json'), opts, await format(opts, pkg))
 }
 
 module.exports.options = initOpts().options
@@ -190,14 +194,27 @@ module.exports.cli = function () {
 }
 
 module.exports.readPackageJson = readPackageJson
-async function readPackageJson (pkgPath, opts = {}) {
+async function readPackageJson (options) {
+  const opts = options.values()
   let pkg = {}
   try {
-    pkg = await fs.readJSON(pkgPath)
+    pkg = await fs.readJSON(path.resolve(opts.cwd, 'package.json'))
   } catch (e) {
     // @TODO log this?
     // ignore if missing or unreadable
   }
+
+  // Set defaults from the package.json
+  options.defaults({
+    version: pkg.version,
+    name: pkg.name,
+    type: pkg.type,
+    author: pkg.author,
+    description: pkg.description,
+    repository: pkg.repository && pkg.repository.url,
+    keywords: pkg.keywords
+  })
+
   return pkg
 }
 
