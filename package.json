@@ -1,11 +1,11 @@
 {
   "name": "create-package-json",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Create a package.json",
   "main": "index.js",
   "type": "commonjs",
   "bin": {
-    "create-package-json": "./bin/create-package-json"
+    "create-package-json": "bin/create-package-json"
   },
   "scripts": {
     "test": "standard && mocha",
