@@ -23,7 +23,7 @@ const barePrompt = {
   }
 }
 
-suite.only('create-git', () => {
+suite('create-package-json', () => {
   let fix
   before(() => {
     fix = fixtures()
@@ -33,6 +33,7 @@ suite.only('create-git', () => {
     await fix.setup()
     const pkg = await createPackageJson({
       cwd: fix.TMP,
+      silent: true,
       author: 'Test User <fake@user.com>'
     }, {
       promptor: () => {
@@ -74,12 +75,14 @@ suite.only('create-git', () => {
     assert.strictEqual(pkg.license, 'ISC')
     assert.strictEqual(pkg.type, 'commonjs')
     assert.strictEqual(pkg.main, 'index.js')
+    assert.strictEqual(pkg.scripts && pkg.scripts.test, 'echo "Error: no test specified" && exit 1')
   })
 
   test('load from existing package.json', async () => {
     await fix.setup('existing')
     const pkg = await createPackageJson({
-      cwd: fix.TMP
+      cwd: fix.TMP,
+      silent: true
     }, barePrompt)
 
     assert.strictEqual(pkg.name, '@test/existing')
@@ -89,7 +92,8 @@ suite.only('create-git', () => {
     // Derive from directories
     await fix.setup('scope')
     const pkg1 = await createPackageJson({
-      cwd: path.join(fix.TMP, '@test', 'scoped')
+      cwd: path.join(fix.TMP, '@test', 'scoped'),
+      silent: true
     }, barePrompt)
     assert.strictEqual(pkg1.name, '@test/scoped')
 
@@ -97,6 +101,7 @@ suite.only('create-git', () => {
     await fix.setup('scope')
     const pkg2 = await createPackageJson({
       cwd: path.join(fix.TMP, '@test', 'scoped'),
+      silent: true,
       name: 'foo'
     }, barePrompt)
     assert.strictEqual(pkg2.name, 'foo')
@@ -105,14 +110,25 @@ suite.only('create-git', () => {
     await fix.setup('scope')
     const pkg3 = await createPackageJson({
       cwd: path.join(fix.TMP, '@test', 'scoped'),
+      silent: true,
       name: '@other/foo'
     }, barePrompt)
     assert.strictEqual(pkg3.name, '@other/foo')
 
     // Load from existing package.json
     const pkg5 = await createPackageJson({
-      cwd: path.join(fix.TMP, '@test', 'scoped')
+      cwd: path.join(fix.TMP, '@test', 'scoped'),
+      silent: true
     }, barePrompt)
     assert.strictEqual(pkg5.name, '@other/foo')
+  })
+
+  test.skip('scaffold scripts', async () => {
+    await fix.setup()
+    const pkg = await createPackageJson({
+      cwd: fix.TMP,
+      silent: true
+    }, barePrompt)
+    assert.strictEqual(pkg.scripts && pkg.scripts.test, 'echo \\"running tests\\"')
   })
 })

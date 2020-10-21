@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "commonjs",
   "bin": {
-    "create-package-json": "./bin/create-package-json"
+    "create-package-json": "bin/create-package-json"
   },
   "scripts": {
     "test": "standard && mocha",
@@ -34,8 +34,9 @@
   "license": "ICS",
   "dependencies": {
     "fs-extra": "^9.0.1",
+    "loggerr": "^3.0.0",
     "npm-package-arg": "^8.0.1",
-    "opta": "0.0.6",
+    "opta": "^0.0.6",
     "safe-parse-list": "^0.1.1",
     "validate-npm-package-name": "^3.0.0"
   },

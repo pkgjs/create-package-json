@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const opta = require('opta')
 const parseList = require('safe-parse-list')
+const { Loggerr } = require('loggerr')
 const packageName = require('./lib/package-name')
 const git = require('./lib/git')
 const npm = require('./lib/npm')
@@ -18,6 +19,20 @@ function initOpts () {
           alias: 'd',
           defaultDescription: 'process.cwd()',
           default: () => process.cwd()
+        }
+      },
+      silent: {
+        type: 'boolean',
+        prompt: false,
+        flag: {
+          conflicts: ['verbose']
+        }
+      },
+      verbose: {
+        type: 'boolean',
+        prompt: false,
+        flag: {
+          conflicts: ['silent']
         }
       },
 
@@ -138,12 +153,20 @@ function initOpts () {
         }
       },
       peerDependencies: {
-        advanced: true,
         type: 'string',
         flag: {
           key: 'peer-dependencies'
         },
         prompt: false
+      },
+
+      // Scripts is an odd one
+      scripts: {
+        flag: false,
+        prompt: false,
+        default: {
+          test: 'echo "Error: no test specified" && exit 1'
+        }
       },
 
       // @TODO detect from existing file
@@ -175,15 +198,20 @@ async function main (input, _opts = {}) {
   })
   let opts = options.values()
 
+  const log = _opts.logger || new Loggerr({
+    level: (opts.silent && 'silent') || (opts.verbose && 'debug') || 'info',
+    formatter: 'cli'
+  })
+
   // Read current state and set defaults
-  const pkg = opts.ignoreExisting ? {} : await readPackageJson(options)
+  const pkg = opts.ignoreExisting ? {} : await readPackageJson(options, { log })
 
   await options.prompt({
     promptor: _opts.promptor
   })()
 
   opts = options.values()
-  return write(path.resolve(opts.cwd, 'package.json'), opts, await format(opts, pkg))
+  return write(path.resolve(opts.cwd, 'package.json'), opts, await format(opts, pkg), { log })
 }
 
 module.exports.options = initOpts().options
@@ -194,11 +222,12 @@ module.exports.cli = function () {
 }
 
 module.exports.readPackageJson = readPackageJson
-async function readPackageJson (options) {
+async function readPackageJson (options, { log } = {}) {
   const opts = options.values()
   let pkg = {}
   try {
     pkg = await fs.readJSON(path.resolve(opts.cwd, 'package.json'))
+    log.debug('Read existing package.json', pkg)
   } catch (e) {
     // @TODO log this?
     // ignore if missing or unreadable
@@ -212,7 +241,8 @@ async function readPackageJson (options) {
     author: pkg.author,
     description: pkg.description,
     repository: pkg.repository && pkg.repository.url,
-    keywords: pkg.keywords
+    keywords: pkg.keywords,
+    scripts: Object.assign({}, pkg.scripts, opts.scripts)
   })
 
   return pkg
@@ -232,12 +262,9 @@ async function format (opts, pkg = {}) {
   }
 
   // Scripts
-  // pkg.scripts = Object.assign({}, {
-  //   test: opts.scriptsTest,
-  //   prepare: opts.scriptsPrepare,
-  //   preversion: opts.scriptsPreVersion,
-  //   postpublish: opts.scriptsPostPublish
-  // }, opts.scripts)
+  if (Object.keys(opts.scripts).length) {
+    pkg.scripts = opts.scripts
+  }
 
   pkg.author = opts.author || ''
   pkg.license = opts.license
@@ -279,23 +306,30 @@ async function format (opts, pkg = {}) {
 }
 
 module.exports.write = write
-async function write (pkgPath, opts, pkg) {
+async function write (pkgPath, opts, pkg, { log } = {}) {
   // Write package json
+  log.info(`Writing package.json\n${pkgPath}`)
   await fs.outputJSON(pkgPath, pkg, {
     spaces: opts.spacer || 2
   })
 
   // Run installs
-  await npm.install(opts.dependencies, {
-    save: 'prod',
-    directory: opts.cwd,
-    exact: opts.saveExact
-  })
-  await npm.install(opts.devDependencies, {
-    save: 'dev',
-    directory: opts.cwd,
-    exact: opts.saveExact
-  })
+  if (opts.dependencies && opts.dependencies.length) {
+    log.info('Installing dependencies', opts.dependencies)
+    await npm.install(opts.dependencies, {
+      save: 'prod',
+      directory: opts.cwd,
+      exact: opts.saveExact
+    })
+  }
+  if (opts.devDependencies && opts.devDependencies.length) {
+    log.info('Installing dev dependencies', opts.devDependencies)
+    await npm.install(opts.devDependencies, {
+      save: 'dev',
+      directory: opts.cwd,
+      exact: opts.saveExact
+    })
+  }
 
   // Read full package back to return
   return fs.readJSON(pkgPath)
