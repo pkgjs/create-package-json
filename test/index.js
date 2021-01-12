@@ -18,7 +18,7 @@ const barePrompt = {
       }
       return [p.name, ret]
     }))
-    return Object.fromEntries(out)
+    return out.reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {})
   }
 }
 
@@ -69,7 +69,7 @@ suite('create-package-json', () => {
             }
             return [p.name, ret]
           }))
-          return Object.fromEntries(out)
+          return out.reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {})
         }
       }
     })
