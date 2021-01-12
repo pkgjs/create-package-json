@@ -3,6 +3,8 @@ const path = require('path')
 const fs = require('fs-extra')
 const opta = require('opta')
 const parseList = require('safe-parse-list')
+const { promisify } = require('util')
+const readPkg = promisify(require('read-package-json'))
 const { Loggerr } = require('loggerr')
 const packageName = require('./lib/package-name')
 const git = require('./lib/git')
@@ -226,7 +228,7 @@ async function readPackageJson (options, { log } = {}) {
   const opts = options.values()
   let pkg = {}
   try {
-    pkg = await fs.readJSON(path.resolve(opts.cwd, 'package.json'))
+    pkg = await readPkg(path.resolve(opts.cwd, 'package.json'))
     log.debug('Read existing package.json', pkg)
   } catch (e) {
     // @TODO log this?
@@ -240,9 +242,10 @@ async function readPackageJson (options, { log } = {}) {
     type: pkg.type,
     author: pkg.author,
     description: pkg.description,
-    repository: pkg.repository && pkg.repository.url,
+    repository: pkg.repository,
     keywords: pkg.keywords,
-    scripts: Object.assign({}, pkg.scripts, opts.scripts)
+    scripts: pkg.scripts,
+    license: pkg.license
   })
 
   return pkg
@@ -258,21 +261,27 @@ async function format (opts, pkg = {}) {
   pkg.type = opts.type || 'commonjs'
 
   if (opts.keywords && opts.keywords.length) {
-    pkg.keywords = opts.keywords
+    // TODO: extra parsing going on here due to wesleytodd/opta#1
+    pkg.keywords = uniquify([...(pkg.keywords || []), ...parseList(opts.keywords)])
   }
 
   // Scripts
   if (Object.keys(opts.scripts).length) {
-    pkg.scripts = opts.scripts
+    pkg.scripts = { ...(pkg.scripts || {}), ...opts.scripts }
   }
 
+  // TODO: to test the empty string, we need to stub git.author()
   pkg.author = opts.author || ''
   pkg.license = opts.license
 
   if (opts.repository) {
-    pkg.repository = {
-      type: 'git',
-      url: opts.repository
+    if (typeof opts.repository === 'string') {
+      pkg.repository = {
+        type: 'git',
+        url: opts.repository
+      }
+    } else {
+      pkg.repository = opts.repository
     }
   }
 
@@ -306,6 +315,7 @@ async function format (opts, pkg = {}) {
 }
 
 module.exports.write = write
+// TODO: look at https://npm.im/json-file-plus for writing
 async function write (pkgPath, opts, pkg, { log } = {}) {
   // Write package json
   log.info(`Writing package.json\n${pkgPath}`)
@@ -333,4 +343,8 @@ async function write (pkgPath, opts, pkg, { log } = {}) {
 
   // Read full package back to return
   return fs.readJSON(pkgPath)
+}
+
+function uniquify (arr = []) {
+  return [...new Set(arr)]
 }

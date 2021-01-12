@@ -89,3 +89,26 @@ const createPackageJson = require('create-package-json')
   console.log(pkg) // The json after writing and installing
 })()
 ```
+
+## Implementation TODO
+
+> See [`package.json` docs](https://docs.npmjs.com/files/package.json)
+
+- [ ] `exports`
+- [ ] `bin`
+- [ ] `funding`
+- [ ] `files`
+- [ ] `browser`
+- [ ] `directories`
+- [ ] `config`
+- [ ] `dependencies`
+- [ ] `devDependencies`
+- [ ] `bundledDependencies`
+- [ ] `optionalDependencies`
+- [ ] `engines`
+- [ ] `os`
+- [ ] `cpu`
+- [ ] `publishConfig`
+- [ ] `homepage`
+- [ ] `bugs`
+- [ ] `contributors`
