@@ -36,7 +36,7 @@
     "fs-extra": "^9.0.1",
     "loggerr": "^3.0.0",
     "npm-package-arg": "^8.0.1",
-    "opta": "^0.0.6",
+    "opta": "^0.0.7-flag-defaults.0",
     "read-package-json": "^3.0.0",
     "safe-parse-list": "^0.1.1",
     "validate-npm-package-name": "^3.0.0"

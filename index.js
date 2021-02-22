@@ -16,6 +16,7 @@ function initOpts () {
     options: {
       cwd: {
         description: 'Directory to run in',
+        default: process.cwd(),
         prompt: false,
         flag: {
           alias: 'd',
@@ -40,10 +41,10 @@ function initOpts () {
 
       ignoreExisting: {
         description: 'Ignore existing files (& overwrite them)',
+        default: false,
         prompt: false,
         flag: {
-          key: 'ignore-existing',
-          defaultDescription: 'false'
+          key: 'ignore-existing'
         }
       },
 
@@ -174,7 +175,10 @@ function initOpts () {
       // @TODO detect from existing file
       spacer: {
         type: 'string',
-        default: '  ',
+        default: 2,
+        flag: {
+          defaultDescription: '2 spaces'
+        },
         prompt: false
       },
 
@@ -329,7 +333,7 @@ async function write (pkgPath, opts, pkg, { log } = {}) {
     await npm.install(opts.dependencies, {
       save: 'prod',
       directory: opts.cwd,
-      exact: opts.saveExact
+      exact: !!opts.saveExact
     })
   }
   if (opts.devDependencies && opts.devDependencies.length) {
@@ -337,7 +341,7 @@ async function write (pkgPath, opts, pkg, { log } = {}) {
     await npm.install(opts.devDependencies, {
       save: 'dev',
       directory: opts.cwd,
-      exact: opts.saveExact
+      exact: !!opts.saveExact
     })
   }
 
