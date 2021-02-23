@@ -82,7 +82,7 @@ function initOpts () {
         prompt: {
           message: 'Author:',
           default: (promptInput, allInput) => {
-            return allInput.author || git.author({ cwd: allInput.cwd })
+            return allInput.author
           }
         }
       },
@@ -239,12 +239,24 @@ async function readPackageJson (options, { log } = {}) {
     // ignore if missing or unreadable
   }
 
+  let author
+  if (!pkg || !pkg.author) {
+    const gitAuthor = await git.author({ cwd: opts.cwd })
+    if (gitAuthor) {
+      author = gitAuthor
+    }
+  } else if (pkg && typeof pkg.author === 'string') {
+    author = pkg.author
+  } else if (pkg && typeof pkg.author !== 'undefined') {
+    author = `${pkg.author.name}${pkg.author.email ? ` <${pkg.author.email}>` : ''}`
+  }
+
   // Set defaults from the package.json
   options.defaults({
     version: pkg.version,
     name: pkg.name,
     type: pkg.type,
-    author: pkg.author,
+    author: author,
     description: pkg.description,
     repository: pkg.repository,
     keywords: pkg.keywords,
