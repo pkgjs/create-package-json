@@ -217,7 +217,7 @@ async function main (input, _opts = {}) {
   })()
 
   opts = options.values()
-  return write(path.resolve(opts.cwd, 'package.json'), opts, await format(opts, pkg), { log })
+  return write(opts, await format(opts, pkg), { log })
 }
 
 module.exports.options = initOpts().options
@@ -302,6 +302,8 @@ async function format (opts, pkg = {}) {
     pkg.peerDependencies = {}
 
     await Promise.all(opts.peerDependencies.map(async (name) => {
+      // @TODO we should align peer deps with the associated
+      // devDep or prodDep semver range
       const spec = await npm.normalizePackageName(name)
       let ver
       switch (spec.type) {
@@ -320,7 +322,8 @@ async function format (opts, pkg = {}) {
 
 module.exports.write = write
 // TODO: look at https://npm.im/json-file-plus for writing
-async function write (pkgPath, opts, pkg, { log } = {}) {
+async function write (opts, pkg, { log } = {}) {
+  const pkgPath = path.resolve(opts.cwd, 'package.json')
   // Write package json
   log.info(`Writing package.json\n${pkgPath}`)
   await fs.outputJSON(pkgPath, pkg, {
