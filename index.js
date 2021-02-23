@@ -91,7 +91,7 @@ function initOpts () {
         prompt: {
           message: 'Repository:',
           default: (promptInput, allInput) => {
-            return allInput.repository || git.remote({ cwd: allInput.cwd })
+            return allInput.repository
           }
         }
       },
@@ -251,6 +251,18 @@ async function readPackageJson (options, { log } = {}) {
     author = `${pkg.author.name}${pkg.author.email ? ` <${pkg.author.email}>` : ''}`
   }
 
+  let repo
+  if (!pkg || !pkg.repository) {
+    const gitRemote = await git.remote({ cwd: opts.cwd })
+    if (gitRemote) {
+      repo = gitRemote
+    }
+  } else if (pkg && typeof pkg.repository === 'string') {
+    repo = pkg.repository
+  } else if (pkg && typeof pkg.repository !== 'undefined' && pkg.repository.url) {
+    repo = pkg.repository.url
+  }
+
   // Set defaults from the package.json
   options.defaults({
     version: pkg.version,
@@ -258,7 +270,7 @@ async function readPackageJson (options, { log } = {}) {
     type: pkg.type,
     author: author,
     description: pkg.description,
-    repository: pkg.repository,
+    repository: repo,
     keywords: pkg.keywords,
     scripts: pkg.scripts,
     license: pkg.license
