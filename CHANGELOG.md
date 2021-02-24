@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0-5](https://github.com/wesleytodd/create-package-json/compare/v1.0.0-4...v1.0.0-5) (2021-02-24)
+
+
+### Bug Fixes
+
+* remove package.json extras added by read-package-json ([90a2b5b](https://github.com/wesleytodd/create-package-json/commit/90a2b5bd4c28d1ae41e550d233f7e2ddd29946a7))
+
 ## [1.0.0-4](https://github.com/wesleytodd/create-package-json/compare/v1.0.0-3...v1.0.0-4) (2021-02-24)
 
 
