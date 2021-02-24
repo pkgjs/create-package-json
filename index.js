@@ -54,9 +54,14 @@ function initOpts () {
           message: 'Package name:',
           validate: npm.validatePackageName,
           default: (promptInput, allInput) => {
-            return packageName(allInput.name, allInput.cwd)
+            return packageName(allInput.name, allInput.scope, allInput.cwd)
           }
         }
+      },
+      scope: {
+        type: 'string',
+        description: 'Set a scope to be used when suggesting a package name',
+        prompt: false
       },
       version: {
         type: 'string',
