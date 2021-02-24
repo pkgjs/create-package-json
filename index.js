@@ -263,6 +263,11 @@ async function readPackageJson (options, { log } = {}) {
     repo = pkg.repository.url
   }
 
+  // Remove some of the extras that don't make sense here
+  delete pkg.gitHead
+  delete pkg.readme
+  delete pkg._id
+
   // Set defaults from the package.json
   options.defaults({
     version: pkg.version,
