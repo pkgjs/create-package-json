@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0-4](https://github.com/wesleytodd/create-package-json/compare/v1.0.0-3...v1.0.0-4) (2021-02-24)
+
+
+### Bug Fixes
+
+* opta@0.1.0 ([2996c9b](https://github.com/wesleytodd/create-package-json/commit/2996c9b48a3f348c222d2ec5c2c0a4e9c90d54e7))
+
 ## [1.0.0-3](https://github.com/wesleytodd/create-package-json/compare/v1.0.0-2...v1.0.0-3) (2021-02-24)
 
 
