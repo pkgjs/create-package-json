@@ -34,7 +34,7 @@
     "@pkgjs/create": "^0.2.0",
     "execa": "^3.4.0",
     "fs-extra": "^6.0.1",
-    "inquirer": "^5.2.0",
+    "inquirer": "^8.1.0",
     "npm-package-arg": "^7.0.0",
     "safe-parse-list": "^0.1.1",
     "validate-npm-package-name": "^3.0.0"
