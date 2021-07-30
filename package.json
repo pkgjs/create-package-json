@@ -29,7 +29,7 @@
     "type": "GitHub Sponsor",
     "url": "https://github.com/sponsors/wesleytodd"
   },
-  "license": "ICS",
+  "license": "MIT",
   "dependencies": {
     "@pkgjs/create": "^0.2.0",
     "execa": "^3.4.0",
