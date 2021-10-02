@@ -1,46 +1,47 @@
 {
-  "name": "create-package-json",
-  "version": "0.1.2",
-  "description": "Create a package.json",
-  "main": "index.js",
-  "type": "commonjs",
-  "bin": {
-    "create-package-json": "bin/create-package-json"
-  },
-  "scripts": {
-    "test": "standard && mocha",
-    "debug": "mocha --inspect --inspect-brk",
-    "prepublishOnly": "npm t",
-    "postpublish": "git push && git push --tags"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/wesleytodd/create-package-json"
-  },
-  "keywords": [
-    "scaffold",
-    "generator",
-    "package.json",
-    "packagejson",
-    "create"
-  ],
-  "author": "Wes Todd <wes@wesleytodd.com>",
-  "funding": {
-    "type": "GitHub Sponsor",
-    "url": "https://github.com/sponsors/wesleytodd"
-  },
-  "license": "MIT",
-  "dependencies": {
-    "@pkgjs/create": "^0.2.0",
-    "execa": "^3.4.0",
-    "fs-extra": "^6.0.1",
-    "inquirer": "^5.2.0",
-    "npm-package-arg": "^7.0.0",
-    "safe-parse-list": "^0.1.1",
-    "validate-npm-package-name": "^3.0.0"
-  },
-  "devDependencies": {
-    "mocha": "^5.1.1",
-    "standard": "^14.1.0"
-  }
+	"name": "create-package-json",
+	"version": "0.1.2",
+	"description": "Create a package.json",
+	"main": "index.js",
+	"type": "commonjs",
+	"bin": {
+		"create-package-json": "bin/create-package-json"
+	},
+	"scripts": {
+		"lint": "standard --fix",
+		"test": "npm run lint && mocha",
+		"debug": "mocha --inspect --inspect-brk",
+		"prepublishOnly": "npm t",
+		"postpublish": "git push && git push --tags"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/wesleytodd/create-package-json"
+	},
+	"keywords": [
+		"scaffold",
+		"generator",
+		"package.json",
+		"packagejson",
+		"create"
+	],
+	"author": "Wes Todd <wes@wesleytodd.com>",
+	"funding": {
+		"type": "GitHub Sponsor",
+		"url": "https://github.com/sponsors/wesleytodd"
+	},
+	"license": "MIT",
+	"dependencies": {
+		"@pkgjs/create": "^0.2.0",
+		"execa": "^3.4.0",
+		"fs-extra": "^6.0.1",
+		"inquirer": "^5.2.0",
+		"npm-package-arg": "^7.0.0",
+		"safe-parse-list": "^0.1.1",
+		"validate-npm-package-name": "^3.0.0"
+	},
+	"devDependencies": {
+		"mocha": "^5.1.1",
+		"standard": "^14.1.0"
+	}
 }
