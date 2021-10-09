@@ -8,7 +8,7 @@
 		"create-package-json": "bin/create-package-json"
 	},
 	"scripts": {
-		"lint": "standard --fix",
+		"lint": "semistandard --fix",
 		"test": "npm run lint && mocha",
 		"debug": "mocha --inspect --inspect-brk",
 		"prepublishOnly": "npm t",
@@ -44,6 +44,6 @@
 	"devDependencies": {
 		"@types/node": "16.10.2",
 		"mocha": "^5.1.1",
-		"standard": "^14.1.0"
+		"semistandard": "^16.0.1"
 	}
 }
