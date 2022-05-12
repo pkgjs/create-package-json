@@ -1,11 +1,11 @@
-'use strict'
-const create = require('@pkgjs/create')
-const fs = require('fs-extra')
-const path = require('path')
-const parseList = require('safe-parse-list')
-const scopeAndName = require('./lib/scope-and-name')
-const npm = require('./lib/npm')
-const git = require('./lib/git')
+'use strict';
+const create = require('@pkgjs/create');
+const fs = require('fs-extra');
+const path = require('path');
+const parseList = require('safe-parse-list');
+const scopeAndName = require('./lib/scope-and-name');
+const npm = require('./lib/npm');
+const git = require('./lib/git');
 
 // @TODO https://docs.npmjs.com/files/package.json
 // exports
@@ -236,31 +236,31 @@ module.exports = create({
     }
   },
   initOptions: async (input) => {
-    const directory = input.directory || process.cwd()
-    const pkgPath = path.resolve(directory, input.pkgPath || 'package.json')
+    const directory = input.directory || process.cwd();
+    const pkgPath = path.resolve(directory, input.pkgPath || 'package.json');
 
     // Read existing package.json
-    const pkg = input.ignoreExisting ? {} : await readPackageJson(pkgPath)
+    const pkg = input.ignoreExisting ? {} : await readPackageJson(pkgPath);
 
     // Derive defaults from input and existing package.json
-    const version = input.version || pkg.version || '1.0.0'
-    const name = scopeAndName(input.scope, input.name || pkg.name, directory)
-    const type = input.type || pkg.type || 'commonjs'
-    const author = input.author || pkg.author || await git.author()
-    const description = input.description || pkg.description
-    const repository = input.repository || (pkg.repository && pkg.repository.url) || await git.remote(input)
-    const keywords = parseList(input.keywords || pkg.keywords)
+    const version = input.version || pkg.version || '1.0.0';
+    const name = scopeAndName(input.scope, input.name || pkg.name, directory);
+    const type = input.type || pkg.type || 'commonjs';
+    const author = input.author || pkg.author || await git.author();
+    const description = input.description || pkg.description;
+    const repository = input.repository || (pkg.repository && pkg.repository.url) || await git.remote(input);
+    const keywords = parseList(input.keywords || pkg.keywords);
 
     // Dependencies
-    const dependencies = parseList(input.dependencies)
-    const devDependencies = parseList(input.devDependencies)
-    const peerDependencies = parseList(input.peerDependencies)
+    const dependencies = parseList(input.dependencies);
+    const devDependencies = parseList(input.devDependencies);
+    const peerDependencies = parseList(input.peerDependencies);
 
     // Derive standard scripts
-    const scriptsTest = input.scriptsTest || (pkg.scripts && pkg.scripts.test) || 'echo "Error: no test specified" && exit 1'
-    const scriptsPrepare = input.scriptsPrepare || (pkg.scripts && pkg.scripts.prepare)
-    const scriptsPreVersion = input.scriptsPreVersion || (pkg.scripts && pkg.scripts.preversion)
-    const scriptsPostPublish = input.scriptsPostPublish || (pkg.scripts && pkg.scripts.postpublish)
+    const scriptsTest = input.scriptsTest || (pkg.scripts && pkg.scripts.test) || 'echo "Error: no test specified" && exit 1';
+    const scriptsPrepare = input.scriptsPrepare || (pkg.scripts && pkg.scripts.prepare);
+    const scriptsPreVersion = input.scriptsPreVersion || (pkg.scripts && pkg.scripts.preversion);
+    const scriptsPostPublish = input.scriptsPostPublish || (pkg.scripts && pkg.scripts.postpublish);
 
     return {
       pkg,
@@ -280,39 +280,39 @@ module.exports = create({
       scriptsPrepare,
       scriptsPreVersion,
       scriptsPostPublish
-    }
+    };
   }
 }, async (initOpts) => {
   // Process options & prompt for input
-  const opts = await initOpts()
+  const opts = await initOpts();
 
   // Format the json and write it out
-  return write(opts.pkgPath, opts, await format(opts, opts.pkg))
-})
+  return write(opts.pkgPath, opts, await format(opts, opts.pkg));
+});
 
-module.exports.readPackageJson = readPackageJson
+module.exports.readPackageJson = readPackageJson;
 async function readPackageJson (pkgPath, opts = {}) {
-  let pkg = {}
+  let pkg = {};
   try {
-    pkg = await fs.readJSON(pkgPath)
+    pkg = await fs.readJSON(pkgPath);
   } catch (e) {
     // @TODO log this?
     // ignore if missing or unreadable
   }
-  return pkg
+  return pkg;
 }
 
-module.exports.format = format
+module.exports.format = format;
 async function format (opts, pkg = {}) {
   // The order here matters
-  pkg.name = opts.name
-  pkg.version = opts.version
-  pkg.description = opts.description || ''
-  pkg.main = opts.main
-  pkg.type = opts.type || 'commonjs'
+  pkg.name = opts.name;
+  pkg.version = opts.version;
+  pkg.description = opts.description || '';
+  pkg.main = opts.main;
+  pkg.type = opts.type || 'commonjs';
 
   if (opts.keywords && opts.keywords.length) {
-    pkg.keywords = opts.keywords
+    pkg.keywords = opts.keywords;
   }
 
   // Scripts
@@ -321,53 +321,53 @@ async function format (opts, pkg = {}) {
     prepare: opts.scriptsPrepare,
     preversion: opts.scriptsPreVersion,
     postpublish: opts.scriptsPostPublish
-  }, opts.scripts)
+  }, opts.scripts);
 
-  pkg.author = opts.author || ''
-  pkg.license = opts.license
+  pkg.author = opts.author || '';
+  pkg.license = opts.license;
 
   if (opts.repository) {
     pkg.repository = {
       type: 'git',
       url: opts.repository
-    }
+    };
   }
 
   if (opts.private === true) {
-    pkg.private = true
+    pkg.private = true;
   }
 
   if (opts.man && opts.man.length) {
-    pkg.man = Array.isArray(opts.man) && !opts.man[1] ? opts.man[0] : opts.man
+    pkg.man = Array.isArray(opts.man) && !opts.man[1] ? opts.man[0] : opts.man;
   }
 
   // Format peer deps
   if (opts.peerDependencies && opts.peerDependencies.length) {
-    pkg.peerDependencies = {}
+    pkg.peerDependencies = {};
 
     await Promise.all(opts.peerDependencies.map(async (name) => {
-      const spec = await npm.normalizePackageName(name)
-      let ver
+      const spec = await npm.normalizePackageName(name);
+      let ver;
       switch (spec.type) {
         case 'range':
         case 'version':
-          ver = spec.fetchSpec
-          break
+          ver = spec.fetchSpec;
+          break;
         default:
-          ver = '*'
+          ver = '*';
       }
-      pkg.peerDependencies[spec.name] = ver
-    }))
+      pkg.peerDependencies[spec.name] = ver;
+    }));
   }
-  return pkg
+  return pkg;
 }
 
-module.exports.write = write
+module.exports.write = write;
 async function write (pkgPath, opts, pkg) {
   // Write package json
   await fs.outputJSON(pkgPath, pkg, {
     spaces: opts.spacer || 2
-  })
+  });
 
   // Run installs
   await npm.install(opts.dependencies, {
@@ -375,14 +375,14 @@ async function write (pkgPath, opts, pkg) {
     directory: opts.directory,
     silent: opts.silent,
     exact: opts.saveExact
-  })
+  });
   await npm.install(opts.devDependencies, {
     save: 'dev',
     directory: opts.directory,
     silent: opts.silent,
     exact: opts.saveExact
-  })
+  });
 
   // Read full package back to return
-  return fs.readJSON(pkgPath)
+  return fs.readJSON(pkgPath);
 }

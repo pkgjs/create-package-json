@@ -8,7 +8,8 @@
     "create-package-json": "bin/create-package-json"
   },
   "scripts": {
-    "test": "standard && mocha",
+    "lint": "semistandard --fix",
+    "test": "npm run lint && mocha",
     "debug": "mocha --inspect --inspect-brk",
     "prepublishOnly": "npm t",
     "postpublish": "git push && git push --tags"
@@ -37,10 +38,12 @@
     "inquirer": "^5.2.0",
     "npm-package-arg": "^7.0.0",
     "safe-parse-list": "^0.1.1",
+    "semver": "^7.3.5",
     "validate-npm-package-name": "^3.0.0"
   },
   "devDependencies": {
+    "@types/node": "16.10.2",
     "mocha": "^5.1.1",
-    "standard": "^14.1.0"
+    "semistandard": "^16.0.1"
   }
 }
