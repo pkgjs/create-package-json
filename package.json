@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "@types/node": "16.10.2",
-    "mocha": "^5.1.1",
+    "mocha": "^10.2.0",
     "semistandard": "^16.0.1"
   },
   "engines": {
