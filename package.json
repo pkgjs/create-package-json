@@ -33,7 +33,7 @@
   "license": "MIT",
   "dependencies": {
     "@pkgjs/create": "^0.2.0",
-    "execa": "^3.4.0",
+    "execa": "^7.0.0",
     "fs-extra": "^6.0.1",
     "inquirer": "^5.2.0",
     "npm-package-arg": "^7.0.0",
