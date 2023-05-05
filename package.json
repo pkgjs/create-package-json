@@ -42,7 +42,7 @@
     "validate-npm-package-name": "^3.0.0"
   },
   "devDependencies": {
-    "@types/node": "16.10.2",
+    "@types/node": "20.0.0",
     "mocha": "^5.1.1",
     "semistandard": "^16.0.1"
   },
