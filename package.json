@@ -44,7 +44,7 @@
   "devDependencies": {
     "@types/node": "16.10.2",
     "mocha": "^5.1.1",
-    "semistandard": "^16.0.1"
+    "semistandard": "^17.0.0"
   },
   "engines": {
     "node": "^12 || ^14 || ^16"
