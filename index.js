@@ -298,10 +298,8 @@ async function format (opts, pkg = {}) {
   pkg.main = opts.main
   pkg.type = opts.type || 'commonjs'
 
-  if (opts.keywords && opts.keywords.length) {
-    // TODO: extra parsing going on here due to wesleytodd/opta#1
-    pkg.keywords = uniquify([...(pkg.keywords || []), ...parseList(opts.keywords)])
-  }
+  // TODO: extra parsing going on here due to wesleytodd/opta#1
+  pkg.keywords = uniquify([...(pkg.keywords || []), ...parseList(opts.keywords || [])])
 
   // Scripts
   if (Object.keys(opts.scripts).length) {
