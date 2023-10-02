@@ -17,11 +17,6 @@ tool, or inside your other package scaffolding tools.
 ```
 $ npm init package-json
 $ npx create-package-json
-
-# or
-
-$ npm install -g create-package-json
-$ create-package-json
 ```
 
 ### CLI Usage
@@ -29,41 +24,35 @@ $ create-package-json
 ```
 $ create-package-json --help
 
-create-package-json
+Generate a package.json
 
-Create a package.json
+Commands:
+  create-package-json     Generate a package.json                      [default]
 
 Options:
-  --help               Show help                                       [boolean]
-  --version            Show version number                             [boolean]
-  --no-prompt          Prompts, --no-prompt to use defaults and input only
-                                                                       [boolean]
-  --directory, -d      Working directory                                [string]
-  --silent, -S         Suppress all output                             [boolean]
-  --advanced           Show advanced prompts                           [boolean]
-  --existing-package                                                    [string]
-  --scope                                                               [string]
-  --scripts                                                             [string]
-  --name                                                                [string]
-  --package-version                                                     [string]
-  --description                                                         [string]
-  --author                                                              [string]
-  --repository                                                          [string]
-  --keywords                                                            [string]
-  --license                                                             [string]
-  --type                                                                [string]
-  --main                                                                [string]
-  --private                                                            [boolean]
-  --dependencies                                                        [string]
-  --dev-dependencies                                                    [string]
-  --peer-dependencies                                                   [string]
-  --test                                                                [string]
-  --prepare                                                             [string]
-  --post-publish                                                        [string]
-  --pre-version                                                         [string]
-  --spacer                                                              [string]
-  --ignore-existing                                                    [boolean]
-  --save-exact                                                         [boolean]
+      --help               Show help                                   [boolean]
+      --version            Show version number                         [boolean]
+  -d, --cwd                Directory to run in          [default: process.cwd()]
+      --silent                                                         [boolean]
+      --verbose                                                        [boolean]
+      --ignore-existing    Ignore existing files (& overwrite them)
+      --name                                                            [string]
+      --scope              Set a scope to be used when suggesting a package name
+                                                                        [string]
+  -V, --package-version                                                 [string]
+      --description                                                     [string]
+      --author                                                          [string]
+      --repository                                                      [string]
+      --keywords                                                        [string]
+      --license                                                         [string]
+      --type                                                            [string]
+      --main                                                            [string]
+      --private                                                        [boolean]
+      --dependencies                                                    [string]
+      --dev-dependencies                                                [string]
+      --peer-dependencies                                               [string]
+      --spacer                                      [string] [default: 2 spaces]
+      --save-exact                                                     [boolean]
 ```
 
 Dependencies should be a comma separated list like `--dependencies="express,react"`, and it can also
@@ -89,3 +78,26 @@ const createPackageJson = require('create-package-json')
   console.log(pkg) // The json after writing and installing
 })()
 ```
+
+## Implementation TODO
+
+> See [`package.json` docs](https://docs.npmjs.com/files/package.json)
+
+- [ ] `exports`
+- [ ] `bin`
+- [ ] `funding`
+- [ ] `files`
+- [ ] `browser`
+- [ ] `directories`
+- [ ] `config`
+- [ ] `dependencies`
+- [ ] `devDependencies`
+- [ ] `bundledDependencies`
+- [ ] `optionalDependencies`
+- [ ] `engines`
+- [ ] `os`
+- [ ] `cpu`
+- [ ] `publishConfig`
+- [ ] `homepage`
+- [ ] `bugs`
+- [ ] `contributors`

@@ -1,349 +1,285 @@
 'use strict';
-const path = require('path');
-const assert = require('assert');
-const { suite, test } = require('mocha');
-const fs = require('fs-extra');
-const createPackageJson = require('../');
-const git = require('../lib/git');
+const path = require('node:path');
+const assert = require('node:assert');
+const fs = require('node:fs/promises');
+const { promisify } = require('node:util');
+const execFile = promisify(require('node:child_process').execFile);
+const { suite, test, before } = require('mocha');
+const fixtures = require('fs-test-fixtures');
+const createPkgJson = require('..');
 
-const FIX_DIR = path.join(__dirname, 'fixtures');
-const TMP_DIR = path.join(FIX_DIR, 'tmp');
-async function setupFixture (name) {
-  await fs.remove(TMP_DIR);
-  if (name) {
-    await fs.copy(path.join(FIX_DIR, name), TMP_DIR);
+const barePrompt = {
+  promptor: () => async (prompts) => {
+    // Set defaults from prompts
+    const out = await Promise.all(prompts.map(async (p) => {
+      if (!p.when) {
+        return [];
+      }
+      let ret = typeof p.default === 'function' ? p.default({}) : p.default;
+      if (ret && typeof ret.then === 'function') {
+        ret = await ret;
+      }
+      return [p.name, ret];
+    }));
+    return out.reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {});
   }
-}
+};
 
 suite('create-package-json', () => {
-  test('basic package.json', async function () {
-    await setupFixture();
+  let fix;
+  let createPackageJson;
 
-    const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true
-    });
+  before(() => {
+    fix = fixtures();
 
-    assert.deepStrictEqual(pkg, {
-      name: path.basename(TMP_DIR),
-      version: '1.0.0',
-      description: '',
-      main: 'index.js',
-      type: 'commonjs',
-      scripts: {
-        test: 'echo "Error: no test specified" && exit 1'
-      },
-      author: await git.author() || '',
-      license: 'ISC'
-    });
+    createPackageJson = async (opts, prompt = barePrompt) => {
+      return createPkgJson({
+        silent: true,
+        cwd: fix.TMP ? fix.TMP : process.cwd(),
+        ...opts
+      }, prompt);
+    };
   });
 
-  test('load existing package.json', async function () {
-    await setupFixture('existing');
-
+  test('create a new default package.json', async () => {
+    await fix.setup();
     const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true
+      cwd: fix.TMP,
+      author: 'Test User <fake@user.com>'
+    }, {
+      promptor: () => {
+        return async (prompts) => {
+          assert.strictEqual(prompts[0].name, 'name');
+          assert.strictEqual(prompts[1].name, 'version');
+          assert.strictEqual(prompts[2].name, 'description');
+          assert.strictEqual(prompts[3].name, 'author');
+          assert.strictEqual(prompts[4].name, 'repository');
+          assert.strictEqual(prompts[5].name, 'keywords');
+          assert.strictEqual(prompts[6].name, 'license');
+          assert.strictEqual(prompts[7].name, 'type');
+          assert.strictEqual(prompts[8].name, 'main');
+          assert.strictEqual(prompts[9].name, 'dependencies');
+          assert.strictEqual(prompts[10].name, 'devDependencies');
+
+          // Set defaults from prompts
+          const out = await Promise.all(prompts.map(async (p) => {
+            if (!p.when) {
+              return [];
+            }
+            let ret = typeof p.default === 'function' ? p.default({}) : p.default;
+            if (ret && typeof ret.then === 'function') {
+              ret = await ret;
+            }
+            return [p.name, ret];
+          }));
+          return out.reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {});
+        };
+      }
     });
 
-    assert.deepStrictEqual(pkg, {
-      name: '@test/existing',
-      version: '0.0.0',
-      description: 'A test package',
-      main: 'index.js',
-      type: 'commonjs',
-      scripts: {
-        test: 'exit 0'
-      },
-      author: 'Test <tester@example.com>',
-      license: 'ISC'
-    });
+    assert.strictEqual(pkg.name, 'tmp');
+    assert.strictEqual(pkg.version, '1.0.0');
+    assert.strictEqual(pkg.description, '');
+    assert.strictEqual(pkg.author, 'Test User <fake@user.com>');
+    assert.strictEqual(pkg.repository, undefined);
+    assert.deepStrictEqual(pkg.keywords, []);
+    assert.strictEqual(pkg.license, 'ISC');
+    assert.strictEqual(pkg.type, 'commonjs');
+    assert.strictEqual(pkg.main, 'index.js');
+    assert.deepStrictEqual(pkg.scripts, { test: 'echo "Error: no test specified" && exit 1' });
+  });
 
-    const pkg2 = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
+  test('ignore existing package.json', async () => {
+    await fix.setup('ignore-existing');
+    const pkg = await createPackageJson({
       ignoreExisting: true
     });
-    assert.deepStrictEqual(pkg2, {
-      name: path.basename(TMP_DIR),
-      version: '1.0.0',
-      description: '',
-      main: 'index.js',
-      type: 'commonjs',
-      scripts: {
-        test: 'echo "Error: no test specified" && exit 1'
-      },
-      author: await git.author() || '',
-      license: 'ISC'
+
+    assert.strictEqual(pkg.name, 'tmp');
+  });
+
+  suite('existing package.json overrides', () => {
+    test('name', async () => {
+      await fix.setup('overrides-name');
+      const pkg = await createPackageJson();
+
+      assert.strictEqual(pkg.name, '@test/existing');
+    });
+
+    test('repository', async () => {
+      await fix.setup('overrides-repository');
+      const pkg = await createPackageJson();
+
+      assert.deepStrictEqual(pkg.repository, { type: 'git', url: 'https://git-landfill.com/garbage' });
+    });
+
+    test('repository (as string)', async () => {
+      await fix.setup('overrides-repository-string');
+      const pkg = await createPackageJson();
+
+      assert.deepStrictEqual(pkg.repository, { type: 'git', url: 'https://git-landfill.com/garbage' });
     });
   });
 
   test('scoped package names', async () => {
     // Derive from directories
-    await setupFixture('scope');
+    await fix.setup('scope');
     const pkg1 = await createPackageJson({
-      directory: path.join(TMP_DIR, '@test', 'scoped'),
-      prompt: false,
-      silent: true
+      cwd: path.join(fix.TMP, '@test', 'scoped')
     });
     assert.strictEqual(pkg1.name, '@test/scoped');
 
-    // No scope, derive from dir
-    await setupFixture('scope');
+    // Pass non-scoped name
+    await fix.setup('scope');
     const pkg2 = await createPackageJson({
-      directory: path.join(TMP_DIR, '@test', 'scoped'),
-      prompt: false,
-      silent: true,
+      cwd: path.join(fix.TMP, '@test', 'scoped'),
       name: 'foo'
     });
-    assert.strictEqual(pkg2.name, '@test/foo');
+    assert.strictEqual(pkg2.name, 'foo');
 
-    // scope in name
-    await setupFixture('scope');
+    // scoped name
+    await fix.setup('scope');
     const pkg3 = await createPackageJson({
-      directory: path.join(TMP_DIR, '@test', 'scoped'),
-      prompt: false,
-      silent: true,
+      cwd: path.join(fix.TMP, '@test', 'scoped'),
       name: '@other/foo'
     });
     assert.strictEqual(pkg3.name, '@other/foo');
 
-    // seprate scope and name
-    await setupFixture('scope');
-    const pkg4 = await createPackageJson({
-      directory: path.join(TMP_DIR, '@test', 'scoped'),
-      prompt: false,
-      silent: true,
-      scope: 'scope',
-      name: 'foo'
-    });
-    assert.strictEqual(pkg4.name, '@scope/foo');
-
     // Load from existing package.json
     const pkg5 = await createPackageJson({
-      directory: path.join(TMP_DIR, '@test', 'scoped'),
-      prompt: false,
-      silent: true
+      cwd: path.join(fix.TMP, '@test', 'scoped')
     });
-    assert.strictEqual(pkg5.name, '@scope/foo');
-
-    // override name from existing
-    const pkg6 = await createPackageJson({
-      directory: path.join(TMP_DIR, '@test', 'scoped'),
-      prompt: false,
-      silent: true,
-      name: 'bar'
-    });
-    assert.strictEqual(pkg6.name, '@test/bar');
-
-    // override name and scope from existing
-    const pkg7 = await createPackageJson({
-      directory: path.join(TMP_DIR, '@test', 'scoped'),
-      prompt: false,
-      silent: true,
-      name: '@other/baz'
-    });
-    assert.strictEqual(pkg7.name, '@other/baz');
+    assert.strictEqual(pkg5.name, '@other/foo');
   });
 
-  test('version', async function () {
-    await setupFixture();
-    const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
-      version: '2.0.0'
+  suite('scaffold keywords', () => {
+    test('merge keywords', async () => {
+      await fix.setup('overrides-keywords');
+      const pkg = await createPackageJson({
+        keywords: 'baz' // TODO: if keyworsd is _not_ an array, should it merge or overwrite??
+      });
+
+      assert.deepStrictEqual(pkg.keywords, ['foo', 'bar', 'baz']);
     });
-    assert.strictEqual(pkg.version, '2.0.0');
+
+    test('unique keywords', async () => {
+      await fix.setup('overrides-keywords');
+      const pkg = await createPackageJson({
+        keywords: 'foo'
+      });
+
+      assert.deepStrictEqual(pkg.keywords, ['foo', 'bar']);
+    });
   });
 
-  test('type', async function () {
-    await setupFixture();
-    const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true
+  suite('scaffold repository', () => {
+    before(async () => {
+      return fix.setup();
     });
-    assert.strictEqual(pkg.type, 'commonjs');
 
-    await setupFixture();
-    const pkg2 = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
-      type: 'module'
-    });
-    assert.strictEqual(pkg2.type, 'module');
+    test('repository as object', async () => {
+      const pkg = await createPackageJson({
+        repository: {
+          type: 'svn',
+          url: 'https://sourceforge.com/wat'
+        }
+      });
 
-    const pkg3 = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true
+      assert.deepStrictEqual(pkg.repository, {
+        type: 'svn',
+        url: 'https://sourceforge.com/wat'
+      });
     });
-    assert.strictEqual(pkg3.type, 'module');
+
+    test('repository as string', async () => {
+      const pkg = await createPackageJson({
+        repository: 'https://somegit.repo'
+      });
+
+      assert.deepStrictEqual(pkg.repository, {
+        type: 'git',
+        url: 'https://somegit.repo'
+      });
+    });
   });
 
-  test('description', async function () {
-    await setupFixture();
+  test('scaffold private', async () => {
+    await fix.setup();
     const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
-      description: 'test desc'
-    });
-    assert.strictEqual(pkg.description, 'test desc');
-  });
-
-  test('repository', async function () {
-    await setupFixture();
-    const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
-      repository: 'https://github.com/foo/bar.git'
-    });
-    assert.strictEqual(pkg.repository.type, 'git');
-    assert.strictEqual(pkg.repository.url, 'https://github.com/foo/bar.git');
-
-    await setupFixture();
-    // Cannot use a fixture for this beause git refuses
-    // to add a .git directory
-    await fs.outputFile(path.join(TMP_DIR, '.git', 'config'), `
-[remote "origin"]
-  url = git@github.com:wesleytodd/create-package-json.git
-  fetch = +refs/heads/*:refs/remotes/origin/*`);
-
-    const pkg2 = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true
-    });
-    assert.strictEqual(pkg2.repository.type, 'git');
-    assert.strictEqual(pkg2.repository.url, 'https://github.com/wesleytodd/create-package-json.git');
-  });
-
-  test('keywords', async function () {
-    await setupFixture();
-
-    const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
-      keywords: 'foo,   bar, baz,,box'
-    });
-    assert.deepStrictEqual(pkg.keywords, ['foo', 'bar', 'baz', 'box']);
-
-    const pkg2 = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
-      keywords: ['foo', 'bar', 'baz', 'box']
-    });
-    assert.deepStrictEqual(pkg2.keywords, ['foo', 'bar', 'baz', 'box']);
-  });
-
-  test('main', async function () {
-    await setupFixture();
-    const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
-      main: 'lib/index.js'
-    });
-    assert.strictEqual(pkg.main, 'lib/index.js');
-  });
-
-  test('private', async function () {
-    await setupFixture();
-    const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
       private: true
     });
+
     assert.strictEqual(pkg.private, true);
   });
 
-  test('license', async function () {
-    await setupFixture();
-    const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
-      license: 'MIT'
-    });
-    assert.strictEqual(pkg.license, 'MIT');
+  test('scaffold scripts', async () => {
+    await fix.setup();
+    const pkg = await createPackageJson();
+    assert.deepStrictEqual(pkg.scripts, { test: 'echo "Error: no test specified" && exit 1' });
   });
 
-  test('scripts', async function () {
-    await setupFixture('existing');
-    const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
-      scripts: {
-        test: 'exit 1',
-        prepare: 'npm t',
-        preversion: 'npm t',
-        postpublish: 'git push'
+  test('scaffold peerDependencies', async () => {
+    await fix.setup();
+    const pkg = await createPackageJson(
+      {
+        peerDependencies: ['mocha@~8.0.0', 'eslint']
       }
-    });
-    assert.strictEqual(pkg.scripts.test, 'exit 1');
-    assert.strictEqual(pkg.scripts.prepare, 'npm t');
-    assert.strictEqual(pkg.scripts.preversion, 'npm t');
-    assert.strictEqual(pkg.scripts.postpublish, 'git push');
+    );
+
+    assert.deepStrictEqual(pkg.peerDependencies, { mocha: '~8.0.0', eslint: '*' });
   });
 
-  test('dependencies', async function () {
-    this.timeout(60 * 1000);
-    await setupFixture();
-    const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
-      dependencies: '@pkgjs/create@0.1.0,safe-parse-list@0.1.0'
-    });
-    assert.strictEqual(pkg.dependencies['@pkgjs/create'], '^0.1.0');
-    assert.strictEqual(pkg.dependencies['safe-parse-list'], '^0.1.0');
+  suite('scaffold man', () => {
+    test('man as array', async () => {
+      await fix.setup();
+      const pkg = await createPackageJson({ man: ['./man/foo.1', './man/bar.1'] });
 
-    // Save exact
-    const pkg2 = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
-      dependencies: '@pkgjs/create@0.0.1,safe-parse-list@0.0.1',
-      saveExact: true
+      assert.deepStrictEqual(pkg.man, ['./man/foo.1', './man/bar.1']);
     });
-    assert.strictEqual(pkg2.dependencies['@pkgjs/create'], '0.0.1');
-    assert.strictEqual(pkg2.dependencies['safe-parse-list'], '0.0.1');
+
+    test('man as singular array', async () => {
+      await fix.setup();
+      const pkg = await createPackageJson({ man: ['./man/foo.1'] });
+
+      assert.deepStrictEqual(pkg.man, './man/foo.1');
+    });
+
+    test('man as string', async () => {
+      await fix.setup();
+      const pkg = await createPackageJson({ man: './man/foo.1' });
+
+      assert.deepStrictEqual(pkg.man, './man/foo.1');
+    });
   });
 
-  test('devDependencies', async function () {
-    this.timeout(60 * 1000);
-    await setupFixture();
-    const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
-      devDependencies: '@pkgjs/create@0.1.0,safe-parse-list@0.1.0'
-    });
-    assert.strictEqual(pkg.devDependencies['@pkgjs/create'], '^0.1.0');
-    assert.strictEqual(pkg.devDependencies['safe-parse-list'], '^0.1.0');
-  });
+  suite('npm init', () => {
+    test('parity', async () => {
+      await fix.setup();
+      try {
+        await execFile('npm', ['init', '-y'], {
+          cwd: fix.TMP
+        });
+      } catch (e) {
+        console.error(e);
+        throw e;
+      }
+      const npmInitPkg = JSON.parse(await fs.readFile(path.join(fix.TMP, 'package.json'), 'utf8'));
 
-  test('peerDependencies', async function () {
-    this.timeout(60 * 1000);
-    await setupFixture();
-    const pkg = await createPackageJson({
-      directory: TMP_DIR,
-      prompt: false,
-      silent: true,
-      peerDependencies: '@pkgjs/create,safe-parse-list@<1'
+      await fix.setup();
+      const pkg = await createPackageJson();
+
+      // Should be the same
+      assert.strictEqual(pkg.name, npmInitPkg.name);
+      assert.strictEqual(pkg.version, npmInitPkg.version);
+      assert.strictEqual(pkg.description, npmInitPkg.description);
+      assert.strictEqual(pkg.main, npmInitPkg.main);
+      assert.deepStrictEqual(pkg.scripts, npmInitPkg.scripts);
+      assert.deepStrictEqual(pkg.keywords, npmInitPkg.keywords);
+      assert.strictEqual(pkg.license, npmInitPkg.license);
+
+      // Should be different
+      assert.notStrictEqual(pkg.author, npmInitPkg.author, JSON.stringify([pkg.author, npmInitPkg.author]));
+      assert.notStrictEqual(pkg.type, npmInitPkg.type, JSON.stringify([pkg.type, npmInitPkg.type]));
     });
-    assert.strictEqual(pkg.peerDependencies['@pkgjs/create'], '*');
-    assert.strictEqual(pkg.peerDependencies['safe-parse-list'], '<1');
   });
 });
