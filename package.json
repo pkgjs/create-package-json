@@ -39,7 +39,7 @@
     "loggerr": "^3.0.0",
     "npm-package-arg": "^11.0.1",
     "opta": "^1.0.0",
-    "read-package-json": "^3.0.0",
+    "read-package-json": "^7.0.0",
     "safe-parse-list": "^0.1.1",
     "validate-npm-package-name": "^3.0.0"
   },
