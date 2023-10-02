@@ -1,6 +1,9 @@
 'use strict'
-const path = require('path')
-const assert = require('assert')
+const path = require('node:path')
+const assert = require('node:assert')
+const fs = require('node:fs/promises')
+const { promisify } = require('node:util')
+const execFile = promisify(require('node:child_process').execFile)
 const { suite, test, before } = require('mocha')
 const fixtures = require('fs-test-fixtures')
 const createPkgJson = require('..')
@@ -79,7 +82,7 @@ suite('create-package-json', () => {
     assert.strictEqual(pkg.description, '')
     assert.strictEqual(pkg.author, 'Test User <fake@user.com>')
     assert.strictEqual(pkg.repository, undefined)
-    assert.strictEqual(pkg.keywords, undefined)
+    assert.deepStrictEqual(pkg.keywords, [])
     assert.strictEqual(pkg.license, 'ISC')
     assert.strictEqual(pkg.type, 'commonjs')
     assert.strictEqual(pkg.main, 'index.js')
@@ -246,6 +249,37 @@ suite('create-package-json', () => {
       const pkg = await createPackageJson({ man: './man/foo.1' })
 
       assert.deepStrictEqual(pkg.man, './man/foo.1')
+    })
+  })
+
+  suite('npm init', () => {
+    test('parity', async () => {
+      await fix.setup()
+      try {
+        await execFile('npm', ['init', '-y'], {
+          cwd: fix.TMP
+        })
+      } catch (e) {
+        console.error(e)
+        throw e
+      }
+      const npmInitPkg = JSON.parse(await fs.readFile(path.join(fix.TMP, 'package.json'), 'utf8'))
+
+      await fix.setup()
+      const pkg = await createPackageJson()
+
+      // Should be the same
+      assert.strictEqual(pkg.name, npmInitPkg.name)
+      assert.strictEqual(pkg.version, npmInitPkg.version)
+      assert.strictEqual(pkg.description, npmInitPkg.description)
+      assert.strictEqual(pkg.main, npmInitPkg.main)
+      assert.deepStrictEqual(pkg.scripts, npmInitPkg.scripts)
+      assert.deepStrictEqual(pkg.keywords, npmInitPkg.keywords)
+      assert.strictEqual(pkg.license, npmInitPkg.license)
+
+      // Should be different
+      assert.notStrictEqual(pkg.author, npmInitPkg.author, JSON.stringify([pkg.author, npmInitPkg.author]))
+      assert.notStrictEqual(pkg.type, npmInitPkg.type, JSON.stringify([pkg.type, npmInitPkg.type]))
     })
   })
 })
