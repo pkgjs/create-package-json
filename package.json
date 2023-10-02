@@ -41,7 +41,7 @@
     "opta": "^1.0.0",
     "read-package-json": "^7.0.0",
     "safe-parse-list": "^0.1.1",
-    "validate-npm-package-name": "^3.0.0"
+    "validate-npm-package-name": "^5.0.0"
   },
   "devDependencies": {
     "c8": "^8.0.1",
