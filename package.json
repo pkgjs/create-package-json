@@ -34,7 +34,7 @@
   },
   "license": "ICS",
   "dependencies": {
-    "@npmcli/name-from-folder": "^1.0.1",
+    "@npmcli/name-from-folder": "^2.0.0",
     "fs-extra": "^9.0.1",
     "loggerr": "^3.0.0",
     "npm-package-arg": "^8.0.1",
