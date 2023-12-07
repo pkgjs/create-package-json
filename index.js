@@ -3,8 +3,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const opta = require('opta');
 const parseList = require('safe-parse-list');
-const { promisify } = require('util');
-const readPkg = promisify(require('read-package-json'));
+const { create, load } = require('@npmcli/package-json');
 const { Loggerr } = require('loggerr');
 const packageName = require('./lib/package-name');
 const git = require('./lib/git');
@@ -215,7 +214,7 @@ async function main (input, _opts = {}) {
   });
 
   // Read current state and set defaults
-  const pkg = opts.ignoreExisting ? {} : await readPackageJson(options, { log });
+  const pkg = opts.ignoreExisting ? await create(opts.cwd) : await readPackageJson(options, { log });
 
   await options.prompt({
     promptor: _opts.promptor
@@ -235,13 +234,17 @@ module.exports.cli = function () {
 module.exports.readPackageJson = readPackageJson;
 async function readPackageJson (options, { log } = {}) {
   const opts = options.values();
+  let packageInstance;
   let pkg = {};
   try {
-    pkg = await readPkg(path.resolve(opts.cwd, 'package.json'));
+    packageInstance = await load(opts.cwd, {
+      create: true
+    });
+    pkg = packageInstance.content;
     log.debug('Read existing package.json', pkg);
   } catch (e) {
-    // @TODO log this?
     // ignore if missing or unreadable
+    log.error(e);
   }
 
   let author;
@@ -256,17 +259,7 @@ async function readPackageJson (options, { log } = {}) {
     author = `${pkg.author.name}${pkg.author.email ? ` <${pkg.author.email}>` : ''}`;
   }
 
-  let repo;
-  if (!pkg || !pkg.repository) {
-    const gitRemote = await git.remote({ cwd: opts.cwd });
-    if (gitRemote) {
-      repo = gitRemote;
-    }
-  } else if (pkg && typeof pkg.repository === 'string') {
-    repo = pkg.repository;
-  } else if (pkg && typeof pkg.repository !== 'undefined' && pkg.repository.url) {
-    repo = pkg.repository.url;
-  }
+  const repo = await git.repository(opts.cwd, pkg);
 
   // Remove some of the extras that don't make sense here
   delete pkg.gitHead;
@@ -286,11 +279,12 @@ async function readPackageJson (options, { log } = {}) {
     license: pkg.license
   });
 
-  return pkg;
+  return packageInstance.update(pkg);
 }
 
 module.exports.format = format;
-async function format (opts, pkg = {}) {
+async function format (opts, packageInstance) {
+  const pkg = packageInstance.content;
   // The order here matters
   pkg.name = opts.name;
   pkg.version = opts.version;
@@ -349,7 +343,7 @@ async function format (opts, pkg = {}) {
       pkg.peerDependencies[spec.name] = ver;
     }));
   }
-  return pkg;
+  return packageInstance.update(pkg);
 }
 
 module.exports.write = write;
@@ -358,9 +352,7 @@ async function write (opts, pkg, { log } = {}) {
   const pkgPath = path.resolve(opts.cwd, 'package.json');
   // Write package json
   log.info(`Writing package.json\n${pkgPath}`);
-  await fs.outputJSON(pkgPath, pkg, {
-    spaces: opts.spacer || 2
-  });
+  await pkg.save();
 
   // Run installs
   if (opts.dependencies && opts.dependencies.length) {

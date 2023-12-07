@@ -35,11 +35,11 @@
   "license": "MIT",
   "dependencies": {
     "@npmcli/name-from-folder": "^2.0.0",
+    "@npmcli/package-json": "^5.0.0",
     "fs-extra": "^11.1.1",
     "loggerr": "^3.0.0",
     "npm-package-arg": "^11.0.1",
     "opta": "^1.0.0",
-    "read-package-json": "^7.0.0",
     "safe-parse-list": "^0.1.1",
     "validate-npm-package-name": "^5.0.0"
   },
