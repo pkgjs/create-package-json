@@ -252,6 +252,47 @@ suite('create-package-json', () => {
     });
   });
 
+  suite.only('scaffold workspaces', () => {
+    test('workspaces input', async () => {
+      await fix.setup();
+      // Empty array is invalid according to npm
+      const pkg1 = await createPackageJson({
+        workspaces: []
+      });
+      assert.deepStrictEqual(pkg1.workspaces, undefined);
+
+      await fix.setup();
+      const pkg2 = await createPackageJson({
+        workspaces: ['./lib']
+      });
+      assert.deepStrictEqual(pkg2.workspaces, ['./lib']);
+
+      await fix.setup();
+      const pkg3 = await createPackageJson({
+        workspaces: ['./lib/a', './lib/b']
+      });
+      assert.deepStrictEqual(pkg3.workspaces, ['./lib/a', './lib/b']);
+    });
+
+    test('workspaces prompts', async () => {
+      await fix.setup();
+      const pkg1 = await createPackageJson();
+      assert.deepStrictEqual(pkg1.workspaces, undefined);
+
+      const pkg2 = await createPackageJson({}, {
+        promptor: () => {
+          return async (prompts) => {
+            console.log(prompts);
+            return {
+              workspaces: ['./lib/a', './lib/b']
+            };
+          };
+        }
+      });
+      assert.deepStrictEqual(pkg2.workspaces, ['./lib/a', './lib/b']);
+    });
+  });
+
   suite('npm init', () => {
     test('parity', async () => {
       await fix.setup();
