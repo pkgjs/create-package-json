@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/wesleytodd/create-package-json/compare/v1.0.0...v1.1.0) (2024-01-10)
+
+
+### Features
+
+* migrate to @npmcli/package-json ([6e1df67](https://github.com/wesleytodd/create-package-json/commit/6e1df676a548a5c98a1de05b208f8700ef9aadc6))
+
+
+### Bug Fixes
+
+* main should default to existing field when preesnt ([6fd766d](https://github.com/wesleytodd/create-package-json/commit/6fd766df842b59e2034d2264556c41b976b9c0ad))
+
 ## [1.0.0-6](https://github.com/wesleytodd/create-package-json/compare/v1.0.0-5...v1.0.0-6) (2021-02-24)
 
 
