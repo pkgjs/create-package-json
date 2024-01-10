@@ -271,6 +271,7 @@ async function readPackageJson (options, { log } = {}) {
     version: pkg.version,
     name: pkg.name,
     type: pkg.type,
+    main: pkg.main,
     author,
     description: pkg.description,
     repository: repo,
