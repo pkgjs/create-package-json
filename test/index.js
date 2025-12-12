@@ -212,6 +212,16 @@ suite('create-package-json', () => {
     assert.strictEqual(pkg.private, true);
   });
 
+  // Remove null/undefined keys
+  test('remove null/undefined keys', async () => {
+    await fix.setup();
+    const pkg = await createPackageJson({
+      private: null
+    });
+
+    assert.strictEqual(pkg.private, undefined);
+  });
+
   test('scaffold scripts', async () => {
     await fix.setup();
     const pkg = await createPackageJson();
@@ -276,10 +286,10 @@ suite('create-package-json', () => {
       assert.deepStrictEqual(pkg.scripts, npmInitPkg.scripts);
       assert.deepStrictEqual(pkg.keywords, npmInitPkg.keywords);
       assert.strictEqual(pkg.license, npmInitPkg.license);
+      assert.strictEqual(pkg.type, npmInitPkg.type);
 
       // Should be different
       assert.notStrictEqual(pkg.author, npmInitPkg.author, JSON.stringify([pkg.author, npmInitPkg.author]));
-      assert.notStrictEqual(pkg.type, npmInitPkg.type, JSON.stringify([pkg.type, npmInitPkg.type]));
     });
   });
 });
