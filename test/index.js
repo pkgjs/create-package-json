@@ -56,10 +56,11 @@ suite('create-package-json', () => {
           assert.strictEqual(prompts[4].name, 'repository');
           assert.strictEqual(prompts[5].name, 'keywords');
           assert.strictEqual(prompts[6].name, 'license');
-          assert.strictEqual(prompts[7].name, 'type');
-          assert.strictEqual(prompts[8].name, 'main');
-          assert.strictEqual(prompts[9].name, 'dependencies');
-          assert.strictEqual(prompts[10].name, 'devDependencies');
+          assert.strictEqual(prompts[7].name, 'workspaces');
+          assert.strictEqual(prompts[8].name, 'type');
+          assert.strictEqual(prompts[9].name, 'main');
+          assert.strictEqual(prompts[10].name, 'dependencies');
+          assert.strictEqual(prompts[11].name, 'devDependencies');
 
           // Set defaults from prompts
           const out = await Promise.all(prompts.map(async (p) => {
@@ -259,6 +260,46 @@ suite('create-package-json', () => {
       const pkg = await createPackageJson({ man: './man/foo.1' });
 
       assert.deepStrictEqual(pkg.man, './man/foo.1');
+    });
+  });
+
+  suite('scaffold workspaces', () => {
+    test('workspaces input', async () => {
+      await fix.setup();
+      // Empty array is invalid according to npm
+      const pkg1 = await createPackageJson({
+        workspaces: []
+      });
+      assert.deepStrictEqual(pkg1.workspaces, undefined);
+
+      await fix.setup();
+      const pkg2 = await createPackageJson({
+        workspaces: ['./lib']
+      });
+      assert.deepStrictEqual(pkg2.workspaces, ['./lib']);
+
+      await fix.setup();
+      const pkg3 = await createPackageJson({
+        workspaces: ['./lib/a', './lib/b']
+      });
+      assert.deepStrictEqual(pkg3.workspaces, ['./lib/a', './lib/b']);
+    });
+
+    test('workspaces prompts', async () => {
+      await fix.setup();
+      const pkg1 = await createPackageJson();
+      assert.deepStrictEqual(pkg1.workspaces, undefined);
+
+      const pkg2 = await createPackageJson({}, {
+        promptor: () => {
+          return async (prompts) => {
+            return {
+              workspaces: ['./lib/a', './lib/b']
+            };
+          };
+        }
+      });
+      assert.deepStrictEqual(pkg2.workspaces, ['./lib/a', './lib/b']);
     });
   });
 

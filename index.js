@@ -115,6 +115,14 @@ function initOpts () {
         }
       },
 
+      workspaces: {
+        type: 'string',
+        prompt: {
+          message: 'Workspaces:',
+          filter: parseList
+        }
+      },
+
       type: {
         type: 'string',
         prompt: {
@@ -299,6 +307,11 @@ async function format (opts, packageInstance) {
   // Scripts
   if (Object.keys(opts.scripts).length) {
     pkg.scripts = { ...(pkg.scripts || {}), ...opts.scripts };
+  }
+
+  // Workspaces
+  if (Array.isArray(opts.workspaces) && opts.workspaces.length) {
+    pkg.workspaces = opts.workspaces;
   }
 
   // TODO: to test the empty string, we need to stub git.author()
