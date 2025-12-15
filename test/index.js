@@ -286,7 +286,13 @@ suite('create-package-json', () => {
       assert.deepStrictEqual(pkg.scripts, npmInitPkg.scripts);
       assert.deepStrictEqual(pkg.keywords, npmInitPkg.keywords);
       assert.strictEqual(pkg.license, npmInitPkg.license);
-      assert.strictEqual(pkg.type, npmInitPkg.type);
+
+      // Handle different behavior for node versions
+      if (parseInt(process.version.split(/v|\./)[1], 10) < 24) {
+        assert.notStrictEqual(pkg.type, npmInitPkg.type);
+      } else {
+        assert.strictEqual(pkg.type, npmInitPkg.type);
+      }
 
       // Should be different
       assert.notStrictEqual(pkg.author, npmInitPkg.author, JSON.stringify([pkg.author, npmInitPkg.author]));
