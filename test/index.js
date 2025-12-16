@@ -36,6 +36,10 @@ suite('create-package-json', () => {
       return createPkgJson({
         silent: true,
         cwd: fix.TMP ? fix.TMP : process.cwd(),
+        // Set this for all calls to avoid searching
+        // up to the root of this package instead
+        // of the root of the fixture
+        workspaceRoot: fix.TMP,
         ...opts
       }, prompt);
     };
@@ -44,7 +48,6 @@ suite('create-package-json', () => {
   test('create a new default package.json', async () => {
     await fix.setup();
     const pkg = await createPackageJson({
-      cwd: fix.TMP,
       author: 'Test User <fake@user.com>'
     }, {
       promptor: () => {
@@ -57,10 +60,11 @@ suite('create-package-json', () => {
           assert.strictEqual(prompts[5].name, 'keywords');
           assert.strictEqual(prompts[6].name, 'license');
           assert.strictEqual(prompts[7].name, 'workspaces');
-          assert.strictEqual(prompts[8].name, 'type');
-          assert.strictEqual(prompts[9].name, 'main');
-          assert.strictEqual(prompts[10].name, 'dependencies');
-          assert.strictEqual(prompts[11].name, 'devDependencies');
+          assert.strictEqual(prompts[8].name, 'workspaceRoot');
+          assert.strictEqual(prompts[9].name, 'type');
+          assert.strictEqual(prompts[10].name, 'main');
+          assert.strictEqual(prompts[11].name, 'dependencies');
+          assert.strictEqual(prompts[12].name, 'devDependencies');
 
           // Set defaults from prompts
           const out = await Promise.all(prompts.map(async (p) => {

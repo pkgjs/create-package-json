@@ -1,0 +1,10 @@
+{
+  "name": "@test/monorepo-no-workspaces",
+  "version": "0.0.0",
+  "description": "A test monorepo",
+  "scripts": {
+    "test": "exit 0"
+  },
+  "author": "Test <tester@example.com>",
+  "license": "ISC"
+}

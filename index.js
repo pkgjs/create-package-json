@@ -4,6 +4,7 @@ const fs = require('fs-extra');
 const opta = require('opta');
 const parseList = require('safe-parse-list');
 const { create, load } = require('@npmcli/package-json');
+const mapWorkspaces = require('@npmcli/map-workspaces');
 const { Loggerr } = require('loggerr');
 const packageName = require('./lib/package-name');
 const git = require('./lib/git');
@@ -120,6 +121,22 @@ function initOpts () {
         prompt: {
           message: 'Workspaces:',
           filter: parseList
+        }
+      },
+
+      workspaceRoot: {
+        type: 'string',
+        flag: {
+          key: 'workspace-root'
+        },
+        prompt: {
+          message: 'Workspace Root:',
+          when: (promptInput, defaultWhen, allInput) => {
+            if (allInput.workspaceRoot !== allInput.cwd) {
+              return true;
+            }
+            return defaultWhen;
+          }
         }
       },
 
@@ -255,6 +272,50 @@ async function readPackageJson (options, { log } = {}) {
     log.error(e);
   }
 
+  // Check to see if we are in a monorepo context
+  if (!pkg.workspaces) {
+    let rootPkg;
+    let rootDir = opts.workspaceRoot;
+    if (!rootDir) {
+      // Limit to git root if in a checked out repo
+      const gitRoot = await git.repositoryRoot(opts.cwd);
+
+      const [_rootPkg, _rootDir] = await npm.findWorkspaceRoot(opts.cwd, gitRoot);
+      rootPkg = _rootPkg;
+      rootDir = _rootDir;
+    } else {
+      try {
+        rootPkg = await npm.readPkg(rootDir);
+      } catch (e) {
+        if (e.code !== 'ENOENT') {
+          throw e;
+        }
+        // ignore
+      }
+    }
+
+    // If we are *not* inside what looks like an existing monorepo setup,
+    // check what packages may show up and suggest them as defaults
+    // for the `workspaces` key
+    if (rootDir === opts.cwd) {
+      const maybeWorkspaces = await npm.searchForWorkspaces(opts.cwd, pkg);
+      if (maybeWorkspaces.size) {
+        pkg.workspaces = [];
+        for (const wsDir of maybeWorkspaces.values()) {
+          pkg.workspaces.push(path.relative(opts.cwd, wsDir));
+        }
+      }
+    } else {
+      // We are in a workspace context, don't ask about
+      // workspaces and set the workspaceRoot
+      options.overrides({
+        workspaces: null,
+        workspaceRoot: rootDir,
+        workspaceRootPkg: rootPkg
+      });
+    }
+  }
+
   let author;
   if (!pkg || !pkg.author) {
     const gitAuthor = await git.author({ cwd: opts.cwd });
@@ -285,7 +346,8 @@ async function readPackageJson (options, { log } = {}) {
     repository: repo,
     keywords: pkg.keywords,
     scripts: pkg.scripts,
-    license: pkg.license
+    license: pkg.license,
+    workspaces: pkg.workspaces
   });
 
   return packageInstance.update(pkg);
@@ -364,26 +426,86 @@ module.exports.write = write;
 // TODO: look at https://npm.im/json-file-plus for writing
 async function write (opts, pkg, { log } = {}) {
   const pkgPath = path.resolve(opts.cwd, 'package.json');
+
+  // Ensure directory exists
+  await fs.mkdirp(path.dirname(pkgPath));
+
   // Write package json
   log.info(`Writing package.json\n${pkgPath}`);
   await pkg.save();
 
+  // If we dont have workspaceRootPkg then we are
+  // already working on the root workspace package.json
+  // which means we don't need to do anything with updating
+  // the monorepo
+  let workspaceRelativePath = null;
+  if (opts.workspaceRoot && opts.workspaceRootPkg) {
+    workspaceRelativePath = path.relative(opts.workspaceRoot, opts.cwd);
+
+    // Check if this wis already part of the workspace
+    const ws = await mapWorkspaces({
+      pkg: opts.workspaceRootPkg,
+      cwd: opts.workspaceRoot
+    });
+    if (Array.from(ws.values()).includes(opts.cwd)) {
+      log.debug('Workspaces globs already match the new package path, no update necessary');
+    } else {
+      log.info('Adding new package to workspace root package.json');
+      const rootPkg = await load(opts.workspaceRoot);
+      rootPkg.update({
+        workspaces: [...(opts.workspaceRootPkg.workspaces || []), workspaceRelativePath]
+      });
+      await rootPkg.save();
+    }
+
+    log.info('Running install', {
+      directory: opts.workspaceRoot || opts.cwd
+    });
+    const out = await npm.install(null, {
+      directory: opts.workspaceRoot || opts.cwd
+    });
+    if (out.stderr) {
+      log.error(out.stderr);
+    }
+    log.debug(out.stdout);
+  }
+
   // Run installs
   if (opts.dependencies && opts.dependencies.length) {
-    log.info('Installing dependencies', opts.dependencies);
-    await npm.install(opts.dependencies, {
+    log.info('Installing dependencies', {
       save: 'prod',
-      directory: opts.cwd,
-      exact: !!opts.saveExact
+      directory: opts.workspaceRoot || opts.cwd,
+      exact: !!opts.saveExact,
+      workspace: workspaceRelativePath
     });
+    const out = await npm.install(opts.dependencies, {
+      save: 'prod',
+      directory: opts.workspaceRoot || opts.cwd,
+      exact: !!opts.saveExact,
+      workspace: workspaceRelativePath
+    });
+    if (out.stderr) {
+      log.error(out.stderr);
+    }
+    log.debug(out.stdout);
   }
   if (opts.devDependencies && opts.devDependencies.length) {
-    log.info('Installing dev dependencies', opts.devDependencies);
-    await npm.install(opts.devDependencies, {
+    log.info('Installing dev dependencies', {
       save: 'dev',
-      directory: opts.cwd,
-      exact: !!opts.saveExact
+      directory: opts.workspaceRoot || opts.cwd,
+      exact: !!opts.saveExact,
+      workspace: workspaceRelativePath
     });
+    const out = await npm.install(opts.devDependencies, {
+      save: 'dev',
+      directory: opts.workspaceRoot || opts.cwd,
+      exact: !!opts.saveExact,
+      workspace: workspaceRelativePath
+    });
+    if (out.stderr) {
+      log.error(out.stderr);
+    }
+    log.debug(out.stdout);
   }
 
   // Read full package back to return
