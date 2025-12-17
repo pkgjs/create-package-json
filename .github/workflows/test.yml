@@ -3,8 +3,11 @@ name: Test
 on:
   push:
     branches:
-    - main
+      - main
   pull_request:
+
+permissions:
+  content: read
 
 jobs:
   setup:
@@ -13,30 +16,41 @@ jobs:
     outputs:
       nodes: ${{ steps.nodes.outputs.nodes }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
       - name: Setup Node Version Matrix
         id: nodes
         run: |
           NODES=$(npx -y @pkgjs/nv ls supported | jq  '. | .version' | paste -sd "," -)
           echo "nodes=[${NODES}]" >> $GITHUB_OUTPUT
 
+  lint:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v6
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+      - run: npm i
+      - run: npm run lint
+
   test:
-    # uses: pkgjs/action/.github/workflows/node-test.yaml@v0
     runs-on: ubuntu-latest
     needs: setup
     strategy:
       matrix:
         node-version: ${{ fromJson(needs.setup.outputs.nodes) }}
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup git user
-      run: |
-          git config --global user.name "$(git --no-pager log --format=format:'%an' -n 1)"
-          git config --global user.email "$(git --no-pager log --format=format:'%ae' -n 1)"
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: npm install and test
-      run: npm it
+      - uses: actions/checkout@v6
+      - name: Setup git user
+        run: |
+            git config --global user.name "$(git --no-pager log --format=format:'%an' -n 1)"
+            git config --global user.email "$(git --no-pager log --format=format:'%ae' -n 1)"
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: npm install and test
+        run: npm it
