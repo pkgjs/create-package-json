@@ -44,7 +44,7 @@
     "npm-package-arg": "^11.0.1",
     "opta": "^1.1.5",
     "safe-parse-list": "^0.1.1",
-    "validate-npm-package-name": "^5.0.0"
+    "validate-npm-package-name": "^7.0.0"
   },
   "devDependencies": {
     "c8": "^10.1.3",
