@@ -116,14 +116,6 @@ function initOpts () {
         }
       },
 
-      workspaces: {
-        type: 'string',
-        prompt: {
-          message: 'Workspaces:',
-          filter: parseList
-        }
-      },
-
       workspaceRoot: {
         type: 'string',
         flag: {
@@ -131,9 +123,27 @@ function initOpts () {
         },
         prompt: {
           message: 'Workspace Root:',
+          default: (promptInput, allInput) => {
+            return allInput.cwd;
+          },
           when: (promptInput, defaultWhen, allInput) => {
-            if (allInput.workspaceRoot !== allInput.cwd) {
+            if (defaultWhen && allInput.workspaceRoot !== allInput.cwd) {
               return true;
+            }
+            return false;
+          }
+        }
+      },
+
+      workspaces: {
+        type: 'string',
+        prompt: {
+          message: 'Workspaces:',
+          filter: parseList,
+          when: (promptInput, defaultWhen, allInput) => {
+            // Only ask this when running from a workspace root
+            if (allInput.workspaceRoot !== allInput.cwd) {
+              return false;
             }
             return defaultWhen;
           }
