@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/wesleytodd/create-package-json/compare/v1.2.0...v1.2.1) (2026-01-15)
+
+
+### Bug Fixes
+
+* better logic for when to prompt for workspace root and workspaces ([#244](https://github.com/wesleytodd/create-package-json/issues/244)) ([fb84276](https://github.com/wesleytodd/create-package-json/commit/fb8427639ecc9f52edb3a44ae52a63448b26b1ff))
+
 ## [1.2.0](https://github.com/wesleytodd/create-package-json/compare/v1.1.0...v1.2.0) (2025-12-18)
 
 
