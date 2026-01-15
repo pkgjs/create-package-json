@@ -90,4 +90,33 @@ suite('monorepo', () => {
     assert.strictEqual(pkg.workspaces, undefined);
     assert.strictEqual(pkg.dependencies['english-days'], '^1.0.0');
   });
+
+  test('create a new workspace package.json in an existing monorepo passing workspaceRoot', async () => {
+    await fix.setup('monorepo');
+    const pkg = await createPackageJson(
+      {
+        cwd: path.join(fix.TMP, 'baz'),
+        workspaceRoot: fix.TMP
+      },
+      optaUtils.test.promptModule({
+        prompts: {
+          workspaceRoot: {
+            assert: (p) => {
+              assert.strictEqual(p.name, 'workspaceRoot');
+              assert.strictEqual(p.when(), false);
+            }
+          },
+          workspaces: {
+            assert: (p) => {
+              assert.strictEqual(p.name, 'workspaces');
+              assert.strictEqual(p.when(), false);
+            }
+          }
+        }
+      })
+    );
+
+    assert.strictEqual(pkg.name, 'baz');
+    assert.strictEqual(pkg.workspaces, undefined);
+  });
 });

@@ -59,8 +59,8 @@ suite('create-package-json', () => {
           assert.strictEqual(prompts[4].name, 'repository');
           assert.strictEqual(prompts[5].name, 'keywords');
           assert.strictEqual(prompts[6].name, 'license');
-          assert.strictEqual(prompts[7].name, 'workspaces');
-          assert.strictEqual(prompts[8].name, 'workspaceRoot');
+          assert.strictEqual(prompts[7].name, 'workspaceRoot');
+          assert.strictEqual(prompts[8].name, 'workspaces');
           assert.strictEqual(prompts[9].name, 'type');
           assert.strictEqual(prompts[10].name, 'main');
           assert.strictEqual(prompts[11].name, 'dependencies');

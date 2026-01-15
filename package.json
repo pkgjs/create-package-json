@@ -42,7 +42,7 @@
     "fs-extra": "^11.1.1",
     "loggerr": "^3.0.0",
     "npm-package-arg": "^11.0.1",
-    "opta": "^1.1.5",
+    "opta": "^1.1.6",
     "safe-parse-list": "^0.1.1",
     "validate-npm-package-name": "^5.0.0"
   },
