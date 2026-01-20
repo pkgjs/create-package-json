@@ -441,7 +441,7 @@ async function write (opts, pkg, { log } = {}) {
   await fs.mkdirp(path.dirname(pkgPath));
 
   // Write package json
-  log.info(`Writing package.json\n${pkgPath}`);
+  log.info(`Writing ${pkgPath}`);
   await pkg.save();
 
   // If we dont have workspaceRootPkg then we are
@@ -460,7 +460,7 @@ async function write (opts, pkg, { log } = {}) {
     if (Array.from(ws.values()).includes(opts.cwd)) {
       log.debug('Workspaces globs already match the new package path, no update necessary');
     } else {
-      log.info('Adding new package to workspace root package.json');
+      log.info(`Adding ${workspaceRelativePath} to workspaces in package.json`);
       const rootPkg = await load(opts.workspaceRoot);
       rootPkg.update({
         workspaces: [...(opts.workspaceRootPkg.workspaces || []), workspaceRelativePath]
@@ -495,7 +495,7 @@ async function write (opts, pkg, { log } = {}) {
       workspace: workspaceRelativePath
     });
     if (out.stderr) {
-      log.error(out.stderr);
+      log.warning(out.stderr);
     }
     log.debug(out.stdout);
   }
