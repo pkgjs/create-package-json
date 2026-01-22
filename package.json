@@ -38,7 +38,7 @@
   "dependencies": {
     "@npmcli/map-workspaces": "^5.0.3",
     "@npmcli/name-from-folder": "^2.0.0",
-    "@npmcli/package-json": "^5.0.0",
+    "@npmcli/package-json": "^7.0.4",
     "fs-extra": "^11.1.1",
     "loggerr": "^3.0.0",
     "npm-package-arg": "^11.0.1",
