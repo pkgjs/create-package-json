@@ -314,6 +314,10 @@ async function readPackageJson (options, { log } = {}) {
         for (const wsDir of maybeWorkspaces.values()) {
           pkg.workspaces.push(path.relative(opts.cwd, wsDir));
         }
+      } else {
+        options.overrides({
+          workspaceRoot: rootDir
+        });
       }
     } else {
       // We are in a workspace context, don't ask about
