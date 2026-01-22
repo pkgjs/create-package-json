@@ -14,7 +14,7 @@
     "lint": "semistandard",
     "lint:fix": "semistandard --fix",
     "debug": "mocha --inspect --inspect-brk",
-    "prerelease": "npm run lint && npm test && standard-version && npm login",
+    "prerelease": "git pull --ff-only && npm run lint && npm test && standard-version && npm login",
     "release": "npm publish --access=public --tag=\"${1:-latest}\"",
     "postrelease": "(npm logout || true) && git push --follow-tags && gh release create --draft --generate-notes \"v$(cat package.json | jq -r .version)\""
   },
