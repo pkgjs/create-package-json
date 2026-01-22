@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.2](https://github.com/wesleytodd/create-package-json/compare/v1.2.1...v1.2.2) (2026-01-22)
+
+
+### Bug Fixes
+
+* **release:** git pull --ff-only before release ([77c9bbf](https://github.com/wesleytodd/create-package-json/commit/77c9bbf7efbe5687ae0654083160ccd6f32ba3a4))
+* small logging tweaks ([#245](https://github.com/wesleytodd/create-package-json/issues/245)) ([b47292e](https://github.com/wesleytodd/create-package-json/commit/b47292e9e562d1572424f620e0bd201ddd7b8b63))
+
 ### [1.2.1](https://github.com/wesleytodd/create-package-json/compare/v1.2.0...v1.2.1) (2026-01-15)
 
 
