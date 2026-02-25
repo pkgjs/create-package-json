@@ -47,7 +47,7 @@
     "validate-npm-package-name": "^5.0.0"
   },
   "devDependencies": {
-    "c8": "^10.1.3",
+    "c8": "^11.0.0",
     "fs-test-fixtures": "^0.2.0-next",
     "mocha": "^11.7.5",
     "semistandard": "^17.0.0",
